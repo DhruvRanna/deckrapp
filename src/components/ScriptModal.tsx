@@ -20,9 +20,10 @@ interface Props {
   script: ScriptData | null;
   isLoading?: boolean;
   onClose: () => void;
+  onRegenerate?: () => void;
 }
 
-const ScriptModal: React.FC<Props> = ({ script, isLoading, onClose }) => {
+const ScriptModal: React.FC<Props> = ({ script, isLoading, onClose, onRegenerate }) => {
   const contentRef = useRef<HTMLDivElement>(null);
   const [dragY, setDragY] = useState(0);
   const dragStart = useRef<number | null>(null);
