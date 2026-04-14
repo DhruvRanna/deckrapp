@@ -13,7 +13,7 @@ const BottomNav: React.FC = () => {
   const location = useLocation();
 
   return (
-    <nav className="shrink-0 z-50 border-t border-foreground/10 bg-foreground safe-bottom">
+    <nav className="shrink-0 z-50 border-t border-foreground/10 bg-foreground safe-bottom" style={{ position: "sticky", bottom: 0 }}>
       <div className="mx-auto flex max-w-md items-center justify-around py-1.5 pb-[max(0.35rem,env(safe-area-inset-bottom))]">
         {tabs.map(t => {
           const active = location.pathname.startsWith(t.path);

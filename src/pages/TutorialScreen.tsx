@@ -62,7 +62,6 @@ const TutorialScreen: React.FC = () => {
     touchStart.current = null;
   };
 
-  // Mouse support for desktop
   const handleMouseDown = (e: React.MouseEvent) => {
     touchStart.current = { x: e.clientX, y: e.clientY };
     isDragging.current = true;
@@ -120,11 +119,12 @@ const TutorialScreen: React.FC = () => {
       <p className="mt-2 text-xs tracking-widest text-muted-foreground">{current + 1} OF 3</p>
 
       <div
-        className="mt-8 w-full max-w-xs rounded-2xl bg-card p-10 shadow-sm"
+        className="mt-8 w-full max-w-xs rounded-2xl bg-card p-10"
         style={{
           transform: `translate(${tx}px, ${ty}px) rotate(${rotation}deg)`,
           opacity,
           transition: exiting || (dragDelta.x === 0 && dragDelta.y === 0) ? "transform 0.3s ease-out, opacity 0.3s ease-out" : "none",
+          boxShadow: "0 10px 40px -10px rgba(0,0,0,0.12), 0 4px 16px -4px rgba(0,0,0,0.06)",
         }}
       >
         <div className={`mx-auto w-fit border-2 px-6 py-2 ${slide.color}`}>
@@ -133,8 +133,6 @@ const TutorialScreen: React.FC = () => {
         <p className="mt-6 whitespace-pre-line text-center text-lg font-bold leading-snug">{slide.desc}</p>
         <div className="mt-4 flex justify-center">{slide.arrow}</div>
       </div>
-
-      
     </div>
   );
 };
