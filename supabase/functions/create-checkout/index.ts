@@ -42,8 +42,8 @@ serve(async (req) => {
 
     const productId = billing === "yearly" ? productMap.yearly : productMap.monthly;
 
-    // Use test mode API - switch to live for production
-    const baseUrl = "https://test.dodopayments.com";
+    // Use live mode API
+    const baseUrl = "https://api.dodopayments.com";
 
     const response = await fetch(`${baseUrl}/checkouts`, {
       method: "POST",
