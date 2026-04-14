@@ -1,0 +1,23 @@
+{
+  "name": "DECKR - Swipe. Create. Go Viral.",
+  "short_name": "DECKR",
+  "description": "AI-powered content ideation for creators",
+  "start_url": "https://deckrswipe.lovable.app/",
+  "scope": "https://deckrswipe.lovable.app/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/deckr-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/deckr-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

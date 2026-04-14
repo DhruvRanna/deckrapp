@@ -1,0 +1,100 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 7%;
+    --card: 0 0% 97%;
+    --card-foreground: 0 0% 7%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 7%;
+    --primary: 0 0% 7%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 95%;
+    --secondary-foreground: 0 0% 30%;
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 55%;
+    --accent: 0 0% 93%;
+    --accent-foreground: 0 0% 7%;
+    --destructive: 0 75% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 90%;
+    --input: 0 0% 92%;
+    --ring: 0 0% 7%;
+    --radius: 1rem;
+
+    /* DECKR custom tokens */
+    --save: 145 63% 49%;
+    --save-bg: 145 50% 94%;
+    --script: 262 52% 60%;
+    --script-bg: 262 50% 95%;
+    --skip: 0 75% 65%;
+    --skip-bg: 0 60% 95%;
+    --trend: 200 80% 92%;
+    --trend-foreground: 200 60% 35%;
+    --viral: 35 90% 55%;
+    --shadow-card: 0 24px 48px -28px hsl(var(--foreground) / 0.28);
+    --shadow-card-soft: 0 20px 40px -30px hsl(var(--foreground) / 0.18);
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    overscroll-behavior: none;
+  }
+}
+
+@layer utilities {
+  .font-condensed {
+    font-stretch: condensed;
+    letter-spacing: -0.02em;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+  .text-save { color: hsl(var(--save)); }
+  .text-script { color: hsl(var(--script)); }
+  .text-skip { color: hsl(var(--skip)); }
+  .bg-save { background-color: hsl(var(--save)); }
+  .bg-save-light { background-color: hsl(var(--save-bg)); }
+  .bg-script { background-color: hsl(var(--script)); }
+  .bg-script-light { background-color: hsl(var(--script-bg)); }
+  .bg-skip-light { background-color: hsl(var(--skip-bg)); }
+  .bg-trend { background-color: hsl(var(--trend)); }
+  .text-trend { color: hsl(var(--trend-foreground)); }
+  .border-save { border-color: hsl(var(--save)); }
+  .border-script { border-color: hsl(var(--script)); }
+  .border-skip { border-color: hsl(var(--skip)); }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+   .shadow-card {
+    box-shadow: var(--shadow-card);
+   }
+
+   .shadow-card-soft {
+    box-shadow: var(--shadow-card-soft);
+   }
+}
