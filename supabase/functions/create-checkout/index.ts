@@ -43,7 +43,7 @@ serve(async (req) => {
     const productId = billing === "yearly" ? productMap.yearly : productMap.monthly;
 
     // Live mode API
-    const baseUrl = "https://api.dodopayments.com";
+    const baseUrl = "https://live.dodopayments.com";
 
     const response = await fetch(`${baseUrl}/checkouts`, {
       method: "POST",
