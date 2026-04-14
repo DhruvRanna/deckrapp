@@ -41,6 +41,13 @@ const SwipeScreen: React.FC = () => {
     }
   }, [authUser]);
 
+  // Set default selected niche
+  useEffect(() => {
+    if (user?.niches?.length && !selectedNiche) {
+      setSelectedNiche(user.niches[0]);
+    }
+  }, [user?.niches, selectedNiche]);
+
   const getFallbackIdeas = useCallback((): ContentIdea[] => {
     const niche = user?.niches[0] || "General";
     const platform = user?.platforms[0] || "YOUTUBE SHORTS";
