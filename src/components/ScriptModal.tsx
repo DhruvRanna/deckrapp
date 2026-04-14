@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { X, Copy, Image, Hash, MessageSquare } from "lucide-react";
+import { X, Copy, Image, Hash, MessageSquare, RefreshCw, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface ScriptData {
@@ -20,9 +20,10 @@ interface Props {
   script: ScriptData | null;
   isLoading?: boolean;
   onClose: () => void;
+  onRegenerate?: () => void;
 }
 
-const ScriptModal: React.FC<Props> = ({ script, isLoading, onClose }) => {
+const ScriptModal: React.FC<Props> = ({ script, isLoading, onClose, onRegenerate }) => {
   const contentRef = useRef<HTMLDivElement>(null);
   const [dragY, setDragY] = useState(0);
   const dragStart = useRef<number | null>(null);
@@ -153,6 +154,41 @@ const ScriptModal: React.FC<Props> = ({ script, isLoading, onClose }) => {
                 <p className="mt-2 text-sm whitespace-pre-line text-muted-foreground">{script.captionIdea}</p>
               </div>
             )}
+            {/* ACTION BUTTONS */}
+            <div className="mt-6 flex items-center justify-center gap-3">
+              {onRegenerate && (
+                <button
+                  onClick={onRegenerate}
+                  className="flex items-center gap-2 rounded-xl border border-border px-4 py-3 text-sm font-semibold transition-colors hover:bg-muted"
+                >
+                  <RefreshCw className="h-4 w-4 text-script" /> Regenerate
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  if (!script) return;
+                  const fullScript = `${script.title}\n\n🎣 HOOK:\n${script.hookText}\n\n📝 BODY:\n${script.bodyText}\n\n📢 CTA:\n${script.ctaText}\n\n💡 Delivery Tip: ${script.deliveryTip}${script.hashtags?.length ? `\n\n#️⃣ Hashtags: ${script.hashtags.map(h => `#${h}`).join(" ")}` : ""}${script.captionIdea ? `\n\n📋 Caption: ${script.captionIdea}` : ""}`;
+                  copyToClipboard(fullScript, "Full script");
+                }}
+                className="flex items-center gap-2 rounded-xl border border-border px-4 py-3 text-sm font-semibold transition-colors hover:bg-muted"
+              >
+                <Copy className="h-4 w-4 text-save" /> Copy All
+              </button>
+              <button
+                onClick={() => {
+                  if (!script) return;
+                  const fullScript = `${script.title}\n\n🎣 HOOK:\n${script.hookText}\n\n📝 BODY:\n${script.bodyText}\n\n📢 CTA:\n${script.ctaText}${script.hashtags?.length ? `\n\n${script.hashtags.map(h => `#${h}`).join(" ")}` : ""}`;
+                  if (navigator.share) {
+                    navigator.share({ title: script.title, text: fullScript }).catch(() => {});
+                  } else {
+                    copyToClipboard(fullScript, "Script (ready to share)");
+                  }
+                }}
+                className="flex items-center gap-2 rounded-xl border border-border px-4 py-3 text-sm font-semibold transition-colors hover:bg-muted"
+              >
+                <Share2 className="h-4 w-4 text-primary" /> Share
+              </button>
+            </div>
           </>
         ) : null}
       </div>

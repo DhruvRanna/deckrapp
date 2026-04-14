@@ -58,7 +58,7 @@ serve(async (req) => {
           name: name || email.split("@")[0],
         },
         payment_link: true,
-        return_url: `${req.headers.get("origin") || "https://deckrapp.lovable.app"}/profile?payment=success&plan=${plan}`,
+        return_url: `${req.headers.get("origin") || "https://deckrapp.lovable.app"}/plans?payment=success&plan=${plan}`,
         metadata: {
           user_id: userId,
           plan: plan,
