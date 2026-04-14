@@ -213,12 +213,12 @@ const SwipeScreen: React.FC = () => {
       {/* Card area */}
       {!isLocked && (
         <>
-          <div className="mx-4 flex flex-1 min-h-0 items-center justify-center overflow-hidden">
+          <div className="mx-4 flex flex-1 min-h-0 items-center justify-center overflow-visible">
             <div className="relative w-full max-w-[22rem]" style={{ aspectRatio: "970 / 1385" }}>
               {nextIdea && (
                 <div
                   className={`absolute inset-0 rounded-[1.6rem] ${CARD_COLORS[nextIdea.color] || "bg-trend"} scale-[0.965] opacity-65`}
-                  style={{ boxShadow: "0 20px 50px -15px rgba(0,0,0,0.25), 0 8px 20px -8px rgba(0,0,0,0.12)" }}
+                  style={{ boxShadow: "0 8px 25px -10px rgba(0,0,0,0.1)" }}
                 />
               )}
 
@@ -231,7 +231,7 @@ const SwipeScreen: React.FC = () => {
                         ? { transform: `translate(${dragDelta.x}px, ${dragDelta.y}px) rotate(${dragDelta.x * 0.05}deg)`, transition: dragDelta.x === 0 && dragDelta.y === 0 ? "transform 0.2s" : "none" }
                         : {}
                     ),
-                    boxShadow: "0 25px 60px -15px rgba(0,0,0,0.3), 0 10px 25px -8px rgba(0,0,0,0.15)",
+                    boxShadow: "0 8px 30px -10px rgba(0,0,0,0.15)",
                   }}
                   onTouchStart={handleTouchStart}
                   onTouchMove={handleTouchMove}
@@ -295,7 +295,7 @@ const SwipeScreen: React.FC = () => {
                   </div>
 
                   {/* Bottom metrics */}
-                  <div className="mt-auto grid grid-cols-3 gap-1.5 pt-1">
+                  <div className="mt-1 grid grid-cols-3 gap-1.5 pt-1">
                     <div className="rounded-lg border border-foreground/10 bg-background/30 px-2 py-1.5">
                       <p className="text-[8px] font-semibold tracking-[0.1em] text-muted-foreground">BEST TIME</p>
                       <p className="mt-0.5 text-[11px] font-bold text-foreground">{idea.platform.includes("TIKTOK") ? "6–9 PM" : idea.platform.includes("YOUTUBE") ? "2–5 PM" : "11AM–1PM"}</p>
@@ -355,13 +355,13 @@ const SwipeScreen: React.FC = () => {
           {/* Action buttons */}
           {idea && (
             <div className="flex items-center justify-center gap-6 py-2 shrink-0">
-              <button onClick={() => doSwipe("left")} className="flex h-14 w-14 items-center justify-center rounded-full bg-skip-light shadow-md">
+              <button onClick={() => doSwipe("left")} className="flex h-14 w-14 items-center justify-center rounded-full border border-skip/20">
                 <X className="h-6 w-6 text-skip" />
               </button>
-              <button onClick={() => doSwipe("up")} className="flex h-16 w-16 items-center justify-center rounded-full bg-script-light shadow-lg">
+              <button onClick={() => doSwipe("up")} className="flex h-16 w-16 items-center justify-center rounded-full border border-script/20">
                 <Star className="h-7 w-7 text-script" />
               </button>
-              <button onClick={() => doSwipe("right")} className="flex h-14 w-14 items-center justify-center rounded-full bg-save-light shadow-md">
+              <button onClick={() => doSwipe("right")} className="flex h-14 w-14 items-center justify-center rounded-full border border-save/20">
                 <Check className="h-6 w-6 text-save" />
               </button>
             </div>
