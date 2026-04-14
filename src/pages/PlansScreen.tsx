@@ -1,22 +1,60 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Check, CreditCard, Lock } from "lucide-react";
 import { useApp, PLANS } from "@/context/AppContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const PlansScreen: React.FC = () => {
   const navigate = useNavigate();
-  const { user, upgradePlan } = useApp();
+  const [searchParams] = useSearchParams();
+  const { user, authUser, refreshData } = useApp();
   const currentPlan = user?.plan.name || "FREE";
   const [isYearly, setIsYearly] = useState(false);
+  const [isLoading, setIsLoading] = useState<string | null>(null);
+
+  // Handle payment success redirect
+  useEffect(() => {
+    const paymentStatus = searchParams.get("payment");
+    const plan = searchParams.get("plan");
+    if (paymentStatus === "success" && plan) {
+      toast.success(`${plan} plan payment received! Your plan will be activated shortly.`);
+      // Refresh data to check if webhook already updated the plan
+      setTimeout(() => refreshData(), 3000);
+    }
+  }, [searchParams, refreshData]);
 
   const creatorPrice = isYearly ? 3.99 : 5;
   const proPrice = isYearly ? 14.99 : 19;
-  const creatorLabel = isYearly ? `$${creatorPrice}/mo (billed yearly)` : `$${creatorPrice}/month`;
-  const proLabel = isYearly ? `$${proPrice}/mo (billed yearly)` : `$${proPrice}/month`;
 
-  const handleUpgrade = (plan: "FREE" | "CREATOR" | "PRO") => {
-    upgradePlan(plan);
-    navigate("/profile");
+  const handleUpgrade = async (plan: "CREATOR" | "PRO") => {
+    if (!authUser || !user) return;
+    setIsLoading(plan);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: {
+          plan,
+          billing: isYearly ? "yearly" : "monthly",
+          email: user.email,
+          name: user.name,
+          userId: authUser.id,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.checkout_url) {
+        // Redirect to Dodo Payments checkout
+        window.location.href = data.checkout_url;
+      } else {
+        throw new Error("No checkout URL received");
+      }
+    } catch (err: any) {
+      console.error("Checkout error:", err);
+      toast.error(err?.message || "Failed to create checkout. Please try again.");
+    } finally {
+      setIsLoading(null);
+    }
   };
 
   return (
@@ -70,8 +108,16 @@ const PlansScreen: React.FC = () => {
             ))}
           </ul>
           {currentPlan !== "CREATOR" && (
-            <button onClick={() => handleUpgrade("CREATOR")} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-background py-3.5 text-sm font-semibold text-foreground">
-              <CreditCard className="h-4 w-4" /> Get Creator — ${creatorPrice}/mo
+            <button
+              onClick={() => handleUpgrade("CREATOR")}
+              disabled={!!isLoading}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-background py-3.5 text-sm font-semibold text-foreground disabled:opacity-50"
+            >
+              {isLoading === "CREATOR" ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+              ) : (
+                <><CreditCard className="h-4 w-4" /> Get Creator — ${creatorPrice}/mo</>
+              )}
             </button>
           )}
           {currentPlan === "CREATOR" && <p className="mt-4 text-center text-sm font-semibold text-save">✓ Current Plan</p>}
@@ -87,8 +133,16 @@ const PlansScreen: React.FC = () => {
             ))}
           </ul>
           {currentPlan !== "PRO" && (
-            <button onClick={() => handleUpgrade("PRO")} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-foreground py-3.5 text-sm font-semibold text-background">
-              <CreditCard className="h-4 w-4" /> Get Pro — ${proPrice}/mo
+            <button
+              onClick={() => handleUpgrade("PRO")}
+              disabled={!!isLoading}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-foreground py-3.5 text-sm font-semibold text-background disabled:opacity-50"
+            >
+              {isLoading === "PRO" ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
+              ) : (
+                <><CreditCard className="h-4 w-4" /> Get Pro — ${proPrice}/mo</>
+              )}
             </button>
           )}
           {currentPlan === "PRO" && <p className="mt-4 text-center text-sm font-semibold text-save">✓ Current Plan</p>}
@@ -96,7 +150,7 @@ const PlansScreen: React.FC = () => {
       </div>
 
       <div className="mt-4 flex items-center justify-center gap-1 text-[10px] text-muted-foreground">
-        <Lock className="h-3 w-3" /> Payments secured · Cancel anytime
+        <Lock className="h-3 w-3" /> Payments secured by Dodo Payments · Cancel anytime
       </div>
     </div>
   );
