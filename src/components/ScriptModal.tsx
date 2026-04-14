@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { X, Copy, Image, Hash, MessageSquare } from "lucide-react";
+import { X, Copy, Image, Hash, MessageSquare, RefreshCw, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface ScriptData {
