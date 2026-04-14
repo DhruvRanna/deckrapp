@@ -30,6 +30,7 @@ const SwipeScreen: React.FC = () => {
   const [dragDelta, setDragDelta] = useState({ x: 0, y: 0 });
   const loadingRef = useRef(false);
   const [initialLoaded, setInitialLoaded] = useState(false);
+  const [selectedNiche, setSelectedNiche] = useState<string>("");
 
   useEffect(() => {
     if (!authUser) return;
