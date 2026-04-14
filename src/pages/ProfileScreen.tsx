@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "@/context/AppContext";
-import { ChevronRight, Bell, Calendar, Tag, CreditCard, HelpCircle, Info, Mail, FileText, Shield, LogOut, Lock, X } from "lucide-react";
+import { ChevronRight, Bell, Calendar, Tag, CreditCard, HelpCircle, Info, Mail, FileText, Shield, LogOut, Lock, X, MonitorSmartphone } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 
 const NICHES = ["Finance", "Fitness", "Tech", "Fashion", "Food", "Travel", "Motivation", "Gaming", "Beauty", "Business", "Parenting", "Education", "Comedy", "Lifestyle", "Crypto", "Health"];
@@ -85,6 +85,15 @@ const ProfileScreen: React.FC = () => {
             <div className="flex-1 text-left min-w-0">
               <p className="text-sm font-medium">Posting Schedule</p>
               <p className="text-[10px] text-muted-foreground">{user.postingFrequency || "Not set"}</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+          </button>
+
+          <button onClick={() => navigate("/settings/platforms")} className="flex w-full items-center gap-3 border-t border-border px-4 py-3.5">
+            <MonitorSmartphone className="h-5 w-5 text-muted-foreground shrink-0" />
+            <div className="flex-1 text-left min-w-0">
+              <p className="text-sm font-medium">My Platforms</p>
+              <p className="text-[10px] text-muted-foreground truncate">{user.platforms.join(", ") || "None"}</p>
             </div>
             <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
           </button>

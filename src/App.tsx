@@ -18,6 +18,7 @@ import PlansScreen from "@/pages/PlansScreen";
 import NicheSettingsScreen from "@/pages/NicheSettingsScreen";
 import ScheduleSettingsScreen from "@/pages/ScheduleSettingsScreen";
 import NotificationSettingsScreen from "@/pages/NotificationSettingsScreen";
+import PlatformSettingsScreen from "@/pages/PlatformSettingsScreen";
 import { PrivacyPolicy, TermsConditions, AboutScreen, ContactScreen, HelpScreen } from "@/pages/SettingsPages";
 import NotFound from "@/pages/NotFound";
 
@@ -68,6 +69,7 @@ const App = () => (
               <Route path="/settings/niches" element={<ProtectedRoute><NicheSettingsScreen /></ProtectedRoute>} />
               <Route path="/settings/schedule" element={<ProtectedRoute><ScheduleSettingsScreen /></ProtectedRoute>} />
               <Route path="/settings/notifications" element={<ProtectedRoute><NotificationSettingsScreen /></ProtectedRoute>} />
+              <Route path="/settings/platforms" element={<ProtectedRoute><PlatformSettingsScreen /></ProtectedRoute>} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsConditions />} />
               <Route path="/about" element={<AboutScreen />} />
