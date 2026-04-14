@@ -215,12 +215,24 @@ const SwipeScreen: React.FC = () => {
         <>
           <div className="mx-4 flex flex-1 min-h-0 items-center justify-center overflow-hidden">
             <div className="relative w-full max-w-[22rem]" style={{ aspectRatio: "970 / 1385" }}>
-              {nextIdea && <div className={`absolute inset-0 rounded-[1.6rem] ${CARD_COLORS[nextIdea.color] || "bg-trend"} scale-[0.965] opacity-65 shadow-card-soft`} />}
+              {nextIdea && (
+                <div
+                  className={`absolute inset-0 rounded-[1.6rem] ${CARD_COLORS[nextIdea.color] || "bg-trend"} scale-[0.965] opacity-65`}
+                  style={{ boxShadow: "0 20px 50px -15px rgba(0,0,0,0.25), 0 8px 20px -8px rgba(0,0,0,0.12)" }}
+                />
+              )}
 
               {idea && (
                 <div
-                  className={`relative flex flex-col rounded-[1.6rem] ${CARD_COLORS[idea.color] || "bg-trend"} px-4 pb-3 pt-3 shadow-card h-full overflow-hidden ${animClass}`}
-                  style={!animClass ? { transform: `translate(${dragDelta.x}px, ${dragDelta.y}px) rotate(${dragDelta.x * 0.05}deg)`, transition: dragDelta.x === 0 && dragDelta.y === 0 ? "transform 0.2s" : "none" } : undefined}
+                  className={`relative flex flex-col rounded-[1.6rem] ${CARD_COLORS[idea.color] || "bg-trend"} px-4 pb-3 pt-3 h-full overflow-hidden ${animClass}`}
+                  style={{
+                    ...(
+                      !animClass
+                        ? { transform: `translate(${dragDelta.x}px, ${dragDelta.y}px) rotate(${dragDelta.x * 0.05}deg)`, transition: dragDelta.x === 0 && dragDelta.y === 0 ? "transform 0.2s" : "none" }
+                        : {}
+                    ),
+                    boxShadow: "0 25px 60px -15px rgba(0,0,0,0.3), 0 10px 25px -8px rgba(0,0,0,0.15)",
+                  }}
                   onTouchStart={handleTouchStart}
                   onTouchMove={handleTouchMove}
                   onTouchEnd={handleTouchEnd}
@@ -247,25 +259,25 @@ const SwipeScreen: React.FC = () => {
                     <span className="rounded-full border border-foreground/10 bg-background/55 px-2.5 py-1 text-[10px] font-semibold">{idea.viralScore}% 🔥</span>
                   </div>
 
-                  <div className="mt-2 border-t border-foreground/10" />
+                  <div className="mt-1.5 border-t border-foreground/10" />
 
                   {/* Title */}
-                  <h2 className="mt-2 text-[1.4rem] font-black italic leading-[1.15] tracking-[-0.02em] text-foreground">{idea.title}</h2>
+                  <h2 className="mt-1.5 text-[1.4rem] font-black italic leading-[1.15] tracking-[-0.02em] text-foreground">{idea.title}</h2>
 
                   {/* Hook section */}
-                  <div className="mt-2 rounded-xl border border-foreground/10 bg-background/30 px-3 py-2">
+                  <div className="mt-1.5 rounded-xl border border-foreground/10 bg-background/30 px-3 py-2">
                     <p className="text-[10px] font-semibold tracking-[0.25em] text-save">HOOK</p>
-                    <p className="mt-1 text-[0.82rem] italic leading-[1.3] text-foreground/80">"{idea.hook}"</p>
+                    <p className="mt-0.5 text-[0.82rem] italic leading-[1.3] text-foreground/80">"{idea.hook}"</p>
                   </div>
 
                   {/* Insight */}
-                  <p className="mt-1.5 flex items-start gap-1.5 text-[10px] leading-[1.35] text-muted-foreground">
+                  <p className="mt-1 flex items-start gap-1.5 text-[10px] leading-[1.35] text-muted-foreground">
                     <span>💡</span>
                     <span>{idea.insight}</span>
                   </p>
 
                   {/* Tags */}
-                  <div className="mt-1.5 flex flex-wrap gap-1">
+                  <div className="mt-1 flex flex-wrap gap-1">
                     {idea.tags.slice(0, 3).map((chip) => (
                       <span key={chip} className="rounded-full border border-foreground/10 bg-background/30 px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.04em]">
                         {chip}
@@ -274,7 +286,7 @@ const SwipeScreen: React.FC = () => {
                   </div>
                   
                   {/* Hashtags */}
-                  <div className="mt-1 flex flex-wrap gap-1">
+                  <div className="mt-0.5 flex flex-wrap gap-1">
                     {getHashtags(idea).map((h) => (
                       <span key={h} className="rounded-full border border-save/20 bg-save-light px-2 py-0.5 text-[9px] font-medium text-save">
                         {h}
@@ -282,8 +294,8 @@ const SwipeScreen: React.FC = () => {
                     ))}
                   </div>
 
-                  {/* Bottom metrics - no gap/spacer, directly after hashtags */}
-                  <div className="mt-auto grid grid-cols-3 gap-1.5 pt-2">
+                  {/* Bottom metrics */}
+                  <div className="mt-auto grid grid-cols-3 gap-1.5 pt-1">
                     <div className="rounded-lg border border-foreground/10 bg-background/30 px-2 py-1.5">
                       <p className="text-[8px] font-semibold tracking-[0.1em] text-muted-foreground">BEST TIME</p>
                       <p className="mt-0.5 text-[11px] font-bold text-foreground">{idea.platform.includes("TIKTOK") ? "6–9 PM" : idea.platform.includes("YOUTUBE") ? "2–5 PM" : "11AM–1PM"}</p>
@@ -299,7 +311,7 @@ const SwipeScreen: React.FC = () => {
                   </div>
 
                   {/* Viral Potential Bar */}
-                  <div className="mt-1.5 rounded-lg border border-foreground/10 bg-background/30 px-2.5 py-1.5">
+                  <div className="mt-1 rounded-lg border border-foreground/10 bg-background/30 px-2.5 py-1.5">
                     <div className="flex items-center justify-between">
                       <p className="text-[8px] font-semibold tracking-[0.1em] text-muted-foreground">VIRAL POTENTIAL</p>
                       <p className="text-[10px] font-bold text-save">{idea.viralScore}%</p>
@@ -324,14 +336,14 @@ const SwipeScreen: React.FC = () => {
 
           {/* Hint labels */}
           {showFirstTimeHint && idea && (
-            <div className="flex items-center justify-between px-10 pt-1 shrink-0">
+            <div className="flex items-center justify-between px-10 pt-0.5 shrink-0">
               <div className="text-center">
                 <p className="text-xs font-bold text-skip">Skip</p>
                 <p className="text-[9px] text-muted-foreground">Swipe left</p>
               </div>
               <div className="text-center">
                 <p className="text-xs font-bold text-script">Script</p>
-                <p className="text-[9px] text-muted-foreground">Swipe up</p>
+                <p className="text-[9px] text-muted-foreground">AI script</p>
               </div>
               <div className="text-center">
                 <p className="text-xs font-bold text-save">Save</p>
@@ -340,14 +352,14 @@ const SwipeScreen: React.FC = () => {
             </div>
           )}
 
-          {/* Action buttons - bigger like before */}
+          {/* Action buttons */}
           {idea && (
-            <div className="flex items-center justify-center gap-8 py-3 shrink-0">
+            <div className="flex items-center justify-center gap-6 py-2 shrink-0">
               <button onClick={() => doSwipe("left")} className="flex h-14 w-14 items-center justify-center rounded-full bg-skip-light shadow-md">
                 <X className="h-6 w-6 text-skip" />
               </button>
-              <button onClick={() => doSwipe("up")} className="flex h-12 w-12 items-center justify-center rounded-full bg-script-light shadow-md">
-                <Star className="h-5 w-5 text-script" />
+              <button onClick={() => doSwipe("up")} className="flex h-16 w-16 items-center justify-center rounded-full bg-script-light shadow-lg">
+                <Star className="h-7 w-7 text-script" />
               </button>
               <button onClick={() => doSwipe("right")} className="flex h-14 w-14 items-center justify-center rounded-full bg-save-light shadow-md">
                 <Check className="h-6 w-6 text-save" />

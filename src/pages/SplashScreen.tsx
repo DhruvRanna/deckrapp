@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "@/context/AppContext";
-import deckrLogo from "@/assets/deckr-logo.png";
 
 const SplashScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -21,8 +20,7 @@ const SplashScreen: React.FC = () => {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background">
       <div className="flex flex-col items-center">
-        <img src={deckrLogo} alt="DECKR" className="w-24 h-24" />
-        <div className="mt-6 h-6 w-6 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+        <img src="/icon-512.png" alt="DECKR" className="w-28 h-28" />
       </div>
     </div>
   );
