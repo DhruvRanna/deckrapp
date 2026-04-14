@@ -45,7 +45,7 @@ const SwipeScreen: React.FC = () => {
     const platform = user?.platforms[0] || "YOUTUBE SHORTS";
     return [
       { id: `f${Date.now()}1`, platform, title: `Top ${niche} Secrets Nobody Tells You`, hook: `Everyone in ${niche} is talking about this but nobody is doing it right.`, insight: "Contrarian take drives engagement", tags: ["QUICK TIP", "60S", "LOW COMPETITION"], duration: "60s", competition: "Low", viralScore: 91, color: "save" },
-      { id: `f${Date.now()}2`, platform, title: `${niche} Hack That Actually Works in 2024`, hook: `I spent 6 months testing every ${niche} strategy. Only ONE worked.`, insight: "Personal journey + single takeaway = high saves", tags: ["SHORT VIDEO", "30S"], duration: "30s", competition: "Low", viralScore: 88, color: "script" },
+      { id: `f${Date.now()}2`, platform, title: `${niche} Hack That Actually Works in 2026`, hook: `I spent 6 months testing every ${niche} strategy. Only ONE worked.`, insight: "Personal journey + single takeaway = high saves", tags: ["SHORT VIDEO", "30S"], duration: "30s", competition: "Low", viralScore: 88, color: "script" },
       { id: `f${Date.now()}3`, platform, title: `Why 97% of People Fail at ${niche}`, hook: `97% of people make this mistake in ${niche}. Are you one of them?`, insight: "Stat-based hooks trigger curiosity gap", tags: ["TRENDING", "MEDIUM COMPETITION"], duration: "60s", competition: "Medium", viralScore: 85, color: "skip" },
       { id: `f${Date.now()}4`, platform, title: `${niche} Beginner to Expert in 30 Days`, hook: `From zero to expert in ${niche}. Here's the exact roadmap.`, insight: "Transformation stories perform well", tags: ["TUTORIAL", "LOW COMPETITION"], duration: "10min", competition: "Low", viralScore: 93, color: "viral" },
       { id: `f${Date.now()}5`, platform, title: `Stop Doing This in ${niche} Right Now!`, hook: `This common ${niche} advice is actually WRONG.`, insight: "Myth-busting content gets shares", tags: ["QUICK TIP", "30S"], duration: "30s", competition: "Low", viralScore: 90, color: "trend" },
@@ -179,7 +179,7 @@ const SwipeScreen: React.FC = () => {
   return (
     <div className="flex flex-col bg-background overflow-hidden" style={{ height: "100dvh" }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-2 pb-1 shrink-0">
+      <div className="flex items-center justify-between px-4 pt-3 pb-2 shrink-0">
         <h1 className="font-condensed text-xl">DECKR</h1>
         <div className="flex items-center gap-2">
           <span className="flex items-center gap-1 rounded-full border border-border px-2.5 py-1 text-[10px] font-medium">
@@ -192,7 +192,7 @@ const SwipeScreen: React.FC = () => {
       </div>
 
       {/* Niche tag */}
-      <div className="px-4 pb-1 shrink-0">
+      <div className="px-4 pb-2 shrink-0">
         <span className="rounded-full bg-foreground px-2.5 py-1 text-[10px] font-medium text-background">{user?.niches[0] || "General"}</span>
       </div>
 
@@ -218,20 +218,19 @@ const SwipeScreen: React.FC = () => {
               {nextIdea && (
                 <div
                   className={`absolute inset-0 rounded-[1.6rem] ${CARD_COLORS[nextIdea.color] || "bg-trend"} scale-[0.965] opacity-65`}
-                  style={{ boxShadow: "0 8px 25px -10px rgba(0,0,0,0.1)" }}
+                  style={{ boxShadow: "0 4px 20px -8px rgba(0,0,0,0.08)" }}
                 />
               )}
 
               {idea && (
                 <div
-                  className={`relative flex flex-col rounded-[1.6rem] ${CARD_COLORS[idea.color] || "bg-trend"} px-4 pb-3 pt-3 h-full overflow-hidden ${animClass}`}
+                  className={`relative flex flex-col rounded-[1.6rem] ${CARD_COLORS[idea.color] || "bg-trend"} px-5 pb-4 pt-4 h-full overflow-hidden ${animClass}`}
                   style={{
-                    ...(
-                      !animClass
-                        ? { transform: `translate(${dragDelta.x}px, ${dragDelta.y}px) rotate(${dragDelta.x * 0.05}deg)`, transition: dragDelta.x === 0 && dragDelta.y === 0 ? "transform 0.2s" : "none" }
-                        : {}
+                    ...(!animClass
+                      ? { transform: `translate(${dragDelta.x}px, ${dragDelta.y}px) rotate(${dragDelta.x * 0.05}deg)`, transition: dragDelta.x === 0 && dragDelta.y === 0 ? "transform 0.2s" : "none" }
+                      : {}
                     ),
-                    boxShadow: "0 8px 30px -10px rgba(0,0,0,0.15)",
+                    boxShadow: "0 4px 20px -8px rgba(0,0,0,0.1)",
                   }}
                   onTouchStart={handleTouchStart}
                   onTouchMove={handleTouchMove}
@@ -259,25 +258,25 @@ const SwipeScreen: React.FC = () => {
                     <span className="rounded-full border border-foreground/10 bg-background/55 px-2.5 py-1 text-[10px] font-semibold">{idea.viralScore}% 🔥</span>
                   </div>
 
-                  <div className="mt-1.5 border-t border-foreground/10" />
+                  <div className="mt-2.5 border-t border-foreground/10" />
 
                   {/* Title */}
-                  <h2 className="mt-1.5 text-[1.4rem] font-black italic leading-[1.15] tracking-[-0.02em] text-foreground">{idea.title}</h2>
+                  <h2 className="mt-2.5 text-[1.35rem] font-black italic leading-[1.18] tracking-[-0.02em] text-foreground">{idea.title}</h2>
 
                   {/* Hook section */}
-                  <div className="mt-1.5 rounded-xl border border-foreground/10 bg-background/30 px-3 py-2">
+                  <div className="mt-3 rounded-xl border border-foreground/10 bg-background/30 px-3 py-2.5">
                     <p className="text-[10px] font-semibold tracking-[0.25em] text-save">HOOK</p>
-                    <p className="mt-0.5 text-[0.82rem] italic leading-[1.3] text-foreground/80">"{idea.hook}"</p>
+                    <p className="mt-1 text-[0.82rem] italic leading-[1.35] text-foreground/80">"{idea.hook}"</p>
                   </div>
 
                   {/* Insight */}
-                  <p className="mt-1 flex items-start gap-1.5 text-[10px] leading-[1.35] text-muted-foreground">
+                  <p className="mt-2.5 flex items-start gap-1.5 text-[10px] leading-[1.4] text-muted-foreground">
                     <span>💡</span>
                     <span>{idea.insight}</span>
                   </p>
 
                   {/* Tags */}
-                  <div className="mt-1 flex flex-wrap gap-1">
+                  <div className="mt-2 flex flex-wrap gap-1.5">
                     {idea.tags.slice(0, 3).map((chip) => (
                       <span key={chip} className="rounded-full border border-foreground/10 bg-background/30 px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.04em]">
                         {chip}
@@ -286,7 +285,7 @@ const SwipeScreen: React.FC = () => {
                   </div>
                   
                   {/* Hashtags */}
-                  <div className="mt-0.5 flex flex-wrap gap-1">
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
                     {getHashtags(idea).map((h) => (
                       <span key={h} className="rounded-full border border-save/20 bg-save-light px-2 py-0.5 text-[9px] font-medium text-save">
                         {h}
@@ -295,7 +294,7 @@ const SwipeScreen: React.FC = () => {
                   </div>
 
                   {/* Bottom metrics */}
-                  <div className="mt-1 grid grid-cols-3 gap-1.5 pt-1">
+                  <div className="mt-2.5 grid grid-cols-3 gap-1.5">
                     <div className="rounded-lg border border-foreground/10 bg-background/30 px-2 py-1.5">
                       <p className="text-[8px] font-semibold tracking-[0.1em] text-muted-foreground">BEST TIME</p>
                       <p className="mt-0.5 text-[11px] font-bold text-foreground">{idea.platform.includes("TIKTOK") ? "6–9 PM" : idea.platform.includes("YOUTUBE") ? "2–5 PM" : "11AM–1PM"}</p>
@@ -311,7 +310,7 @@ const SwipeScreen: React.FC = () => {
                   </div>
 
                   {/* Viral Potential Bar */}
-                  <div className="mt-1 rounded-lg border border-foreground/10 bg-background/30 px-2.5 py-1.5">
+                  <div className="mt-2 rounded-lg border border-foreground/10 bg-background/30 px-2.5 py-1.5">
                     <div className="flex items-center justify-between">
                       <p className="text-[8px] font-semibold tracking-[0.1em] text-muted-foreground">VIRAL POTENTIAL</p>
                       <p className="text-[10px] font-bold text-save">{idea.viralScore}%</p>
@@ -334,35 +333,38 @@ const SwipeScreen: React.FC = () => {
             </div>
           </div>
 
-          {/* Hint labels */}
+          {/* Hint labels with arrows */}
           {showFirstTimeHint && idea && (
-            <div className="flex items-center justify-between px-10 pt-0.5 shrink-0">
-              <div className="text-center">
+            <div className="flex items-center justify-between px-10 pt-1 shrink-0">
+              <div className="text-center flex flex-col items-center">
+                <span className="text-muted-foreground text-xs">←</span>
                 <p className="text-xs font-bold text-skip">Skip</p>
                 <p className="text-[9px] text-muted-foreground">Swipe left</p>
               </div>
-              <div className="text-center">
+              <div className="text-center flex flex-col items-center">
+                <span className="text-muted-foreground text-xs">↑</span>
                 <p className="text-xs font-bold text-script">Script</p>
                 <p className="text-[9px] text-muted-foreground">AI script</p>
               </div>
-              <div className="text-center">
+              <div className="text-center flex flex-col items-center">
+                <span className="text-muted-foreground text-xs">→</span>
                 <p className="text-xs font-bold text-save">Save</p>
                 <p className="text-[9px] text-muted-foreground">Swipe right</p>
               </div>
             </div>
           )}
 
-          {/* Action buttons */}
+          {/* Action buttons - no background, just border */}
           {idea && (
-            <div className="flex items-center justify-center gap-6 py-2 shrink-0">
-              <button onClick={() => doSwipe("left")} className="flex h-14 w-14 items-center justify-center rounded-full border border-skip/20">
-                <X className="h-6 w-6 text-skip" />
+            <div className="flex items-center justify-center gap-5 py-3 shrink-0">
+              <button onClick={() => doSwipe("left")} className="flex h-[52px] w-[52px] items-center justify-center rounded-full border-2 border-skip/30">
+                <X className="h-5 w-5 text-skip" />
               </button>
-              <button onClick={() => doSwipe("up")} className="flex h-16 w-16 items-center justify-center rounded-full border border-script/20">
-                <Star className="h-7 w-7 text-script" />
+              <button onClick={() => doSwipe("up")} className="flex h-[60px] w-[60px] items-center justify-center rounded-full border-2 border-script/30">
+                <Star className="h-6 w-6 text-script" />
               </button>
-              <button onClick={() => doSwipe("right")} className="flex h-14 w-14 items-center justify-center rounded-full border border-save/20">
-                <Check className="h-6 w-6 text-save" />
+              <button onClick={() => doSwipe("right")} className="flex h-[52px] w-[52px] items-center justify-center rounded-full border-2 border-save/30">
+                <Check className="h-5 w-5 text-save" />
               </button>
             </div>
           )}
