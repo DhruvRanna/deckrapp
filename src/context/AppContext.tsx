@@ -79,6 +79,7 @@ interface AppContextType {
   updateNiches: (niches: string[]) => Promise<void>;
   updatePostingFrequency: (freq: string) => Promise<void>;
   updateNotifications: (enabled: boolean) => Promise<void>;
+  updatePlatforms: (platforms: string[]) => Promise<void>;
   incrementSwipe: () => boolean;
   canSwipe: () => boolean;
   canGenerateScript: () => boolean;
@@ -271,6 +272,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await loadProfile(authUser.id);
   }, [authUser, loadProfile]);
 
+  const updatePlatforms = useCallback(async (platforms: string[]) => {
+    if (!authUser) return;
+    await supabase.from("profiles").update({ platforms }).eq("user_id", authUser.id);
+    await loadProfile(authUser.id);
+    toast.success("Platforms updated!");
+  }, [authUser, loadProfile]);
+
   const incrementSwipe = useCallback((): boolean => {
     if (!user || !authUser) return false;
     if (user.plan.swipesPerDay !== Infinity && user.swipesToday >= user.plan.swipesPerDay) return false;
@@ -298,7 +306,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <AppContext.Provider value={{
       user, authUser, isAuthenticated: !!authUser, hasCompletedOnboarding: user?.onboardingCompleted || false,
       isLoading, login, signup, logout, completeOnboarding, saveIdea, deleteIdea, deleteScript,
-      scheduleIdea, upgradePlan, updateNiches, updatePostingFrequency, updateNotifications,
+      scheduleIdea, upgradePlan, updateNiches, updatePostingFrequency, updateNotifications, updatePlatforms,
       incrementSwipe, canSwipe, canGenerateScript, refreshData,
     }}>
       {children}
