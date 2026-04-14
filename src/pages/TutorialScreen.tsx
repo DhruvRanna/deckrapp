@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { ArrowRight, ArrowUp, ArrowLeft } from "lucide-react";
 
 const slides = [
-  { word: "SAVE", color: "text-save border-save", desc: "Swipe RIGHT to save\nan idea to your calendar", arrow: <ArrowRight className="h-6 w-6 text-muted-foreground" />, swipeDir: "right" as const },
-  { word: "SCRIPT", color: "text-script border-script", desc: "Swipe UP to generate\na full script with AI", arrow: <ArrowUp className="h-6 w-6 text-muted-foreground" />, swipeDir: "up" as const },
-  { word: "SKIP", color: "text-skip border-skip", desc: "Swipe LEFT to skip\nideas you don't like", arrow: <ArrowLeft className="h-6 w-6 text-muted-foreground" />, swipeDir: "left" as const },
+  { word: "SAVE", color: "text-save border-save", desc: "Swipe RIGHT to save\nan idea to your calendar", arrow: <ArrowRight className="h-6 w-6 text-muted-foreground" />, swipeDir: "right" as const, hint: "Swipe right to continue", hintArrow: <ArrowRight className="h-4 w-4" /> , hintDir: "right" },
+  { word: "SCRIPT", color: "text-script border-script", desc: "Swipe UP to generate\na full script with AI", arrow: <ArrowUp className="h-6 w-6 text-muted-foreground" />, swipeDir: "up" as const, hint: "Swipe up to continue", hintArrow: <ArrowUp className="h-4 w-4" />, hintDir: "up" },
+  { word: "SKIP", color: "text-skip border-skip", desc: "Swipe LEFT to skip\nideas you don't like", arrow: <ArrowLeft className="h-6 w-6 text-muted-foreground" />, swipeDir: "left" as const, hint: "Swipe left to continue", hintArrow: <ArrowLeft className="h-4 w-4" />, hintDir: "left" },
 ];
 
 const TutorialScreen: React.FC = () => {
@@ -132,6 +132,13 @@ const TutorialScreen: React.FC = () => {
         </div>
         <p className="mt-6 whitespace-pre-line text-center text-lg font-bold leading-snug">{slide.desc}</p>
         <div className="mt-4 flex justify-center">{slide.arrow}</div>
+      </div>
+
+      {/* Swipe hint text below card */}
+      <div className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+        {slide.hintDir === "left" && slide.hintArrow}
+        <span>{slide.hint}</span>
+        {slide.hintDir !== "left" && slide.hintArrow}
       </div>
     </div>
   );
