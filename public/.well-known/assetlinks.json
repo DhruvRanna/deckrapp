@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.deckr.app",
+      "sha256_cert_fingerprints": [
+        "77:56:EF:63:C6:94:A6:D8:7E:B0:CF:56:84:0F:3F:9B:03:B8:0F:63:9B:90:05:52:25:F6:A0:66:D1:F3:17:A5"
+      ]
+    }
+  }
+]
