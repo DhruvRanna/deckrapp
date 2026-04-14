@@ -63,9 +63,10 @@ const SwipeScreen: React.FC = () => {
   const loadIdeas = useCallback(async () => {
     if (!user || loadingRef.current) return;
     loadingRef.current = true;
+    const niche = selectedNiche || user.niches[0] || "General";
     try {
       const { data, error } = await supabase.functions.invoke("generate-ideas", {
-        body: { niches: user.niches, platforms: user.platforms, count: 10 },
+        body: { niches: [niche], platforms: user.platforms, count: 10 },
       });
       if (error) throw error;
       if (data?.ideas) setIdeas(prev => [...prev, ...data.ideas]);
@@ -74,7 +75,7 @@ const SwipeScreen: React.FC = () => {
     } finally {
       loadingRef.current = false;
     }
-  }, [user, getFallbackIdeas]);
+  }, [user, selectedNiche, getFallbackIdeas]);
 
   useEffect(() => {
     if (user && !initialLoaded) {
@@ -83,6 +84,23 @@ const SwipeScreen: React.FC = () => {
       loadIdeas();
     }
   }, [user, initialLoaded, getFallbackIdeas, loadIdeas]);
+
+  // Reset ideas when niche changes
+  const handleNicheChange = (niche: string) => {
+    if (niche === selectedNiche) return;
+    setSelectedNiche(niche);
+    setIdeas([]);
+    setCurrentIndex(0);
+    loadingRef.current = false;
+    // Will reload via effect below
+  };
+
+  useEffect(() => {
+    if (selectedNiche && initialLoaded) {
+      setIdeas(getFallbackIdeas());
+      loadIdeas();
+    }
+  }, [selectedNiche]);
 
   const idea = currentIndex < ideas.length ? ideas[currentIndex] : null;
   const nextIdea = currentIndex + 1 < ideas.length ? ideas[currentIndex + 1] : null;
