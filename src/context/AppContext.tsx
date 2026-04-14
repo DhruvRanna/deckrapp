@@ -166,6 +166,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
+        setIsLoading(true);
         setAuthUser(session.user);
         setTimeout(() => loadProfile(session.user.id).finally(() => setIsLoading(false)), 0);
       } else {
@@ -177,6 +178,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
+        setIsLoading(true);
         setAuthUser(session.user);
         loadProfile(session.user.id).finally(() => setIsLoading(false));
       } else {
