@@ -9,12 +9,12 @@ const corsHeaders = {
 // and replace with actual product IDs
 const PLAN_PRODUCTS: Record<string, { monthly: string; yearly: string }> = {
   CREATOR: {
-    monthly: "pdt_0NcfMt0cDXhPtajGfPDJ3",
-    yearly: "pdt_0NcfNQ6k6AqTZGRLSMWzA",
+    monthly: "pdt_0NcftXvRQR4XhHGRjzkGO",
+    yearly: "pdt_0NcfthMuG9x9poWYI19kc",
   },
   PRO: {
-    monthly: "pdt_0NcfN6wjDJH4MQWmDJ2je",
-    yearly: "pdt_0NcfNVH2PTbMFOMqNYyl6",
+    monthly: "pdt_0NcftcE8PW4uVmPtEzmfc",
+    yearly: "pdt_0NcftmHsw0zOTHL2Ldwfp",
   },
 };
 
