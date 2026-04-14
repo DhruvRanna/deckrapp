@@ -1,4 +1,4 @@
-const CACHE_NAME = 'deckr-v1';
+const CACHE_NAME = 'deckr-v2';
 const urlsToCache = ['/', '/swipe', '/calendar', '/scripts', '/profile', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', event => {
@@ -12,5 +12,19 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  event.respondWith(caches.match(event.request).then(response => response || fetch(event.request).catch(() => caches.match('/'))));
+  const url = new URL(event.request.url);
+
+  // Never intercept OAuth routes — they must always hit the network
+  if (url.pathname.startsWith('/~oauth')) {
+    return;
+  }
+
+  // Never intercept Supabase auth callbacks
+  if (url.pathname.startsWith('/auth/callback')) {
+    return;
+  }
+
+  event.respondWith(
+    caches.match(event.request).then(response => response || fetch(event.request).catch(() => caches.match('/')))
+  );
 });
