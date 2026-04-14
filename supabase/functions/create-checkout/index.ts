@@ -9,12 +9,12 @@ const corsHeaders = {
 // and replace with actual product IDs
 const PLAN_PRODUCTS: Record<string, { monthly: string; yearly: string }> = {
   CREATOR: {
-    monthly: "pdt_0NcftXvRQR4XhHGRjzkGO",
-    yearly: "pdt_0NcfthMuG9x9poWYI19kc",
+    monthly: "pdt_0NcfMt0cDXhPtajGfPDJ3",
+    yearly: "pdt_0NcfNQ6k6AqTZGRLSMWzA",
   },
   PRO: {
-    monthly: "pdt_0NcftcE8PW4uVmPtEzmfc",
-    yearly: "pdt_0NcftmHsw0zOTHL2Ldwfp",
+    monthly: "pdt_0NcfN6wjDJH4MQWmDJ2je",
+    yearly: "pdt_0NcfNVH2PTbMFOMqNYyl6",
   },
 };
 
@@ -42,8 +42,8 @@ serve(async (req) => {
 
     const productId = billing === "yearly" ? productMap.yearly : productMap.monthly;
 
-    // Use test mode API - switch to https://api.dodopayments.com for production
-    const baseUrl = "https://test.dodopayments.com";
+    // Live mode API
+    const baseUrl = "https://api.dodopayments.com";
 
     const response = await fetch(`${baseUrl}/checkouts`, {
       method: "POST",
