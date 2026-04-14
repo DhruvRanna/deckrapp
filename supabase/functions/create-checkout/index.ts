@@ -9,12 +9,12 @@ const corsHeaders = {
 // and replace with actual product IDs
 const PLAN_PRODUCTS: Record<string, { monthly: string; yearly: string }> = {
   CREATOR: {
-    monthly: "pdt_creator_monthly", // Replace with actual Dodo product ID
-    yearly: "pdt_creator_yearly",   // Replace with actual Dodo product ID
+    monthly: "pdt_0NcfMt0cDXhPtajGfPDJ3",
+    yearly: "pdt_0NcfNQ6k6AqTZGRLSMWzA",
   },
   PRO: {
-    monthly: "pdt_pro_monthly",     // Replace with actual Dodo product ID
-    yearly: "pdt_pro_yearly",       // Replace with actual Dodo product ID
+    monthly: "pdt_0NcfN6wjDJH4MQWmDJ2je",
+    yearly: "pdt_0NcfNVH2PTbMFOMqNYyl6",
   },
 };
 
