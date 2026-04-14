@@ -217,9 +217,21 @@ const SwipeScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Niche tag */}
-      <div className="px-4 pb-2 shrink-0">
-        <span className="rounded-full bg-foreground px-2.5 py-1 text-[10px] font-medium text-background">{user?.niches[0] || "General"}</span>
+      {/* Niche tabs */}
+      <div className="px-4 pb-2 shrink-0 flex gap-2 overflow-x-auto no-scrollbar">
+        {(user?.niches || ["General"]).map((niche) => (
+          <button
+            key={niche}
+            onClick={() => handleNicheChange(niche)}
+            className={`rounded-full px-3 py-1 text-[11px] font-medium whitespace-nowrap transition-colors ${
+              selectedNiche === niche
+                ? "bg-foreground text-background"
+                : "bg-muted text-muted-foreground border border-border"
+            }`}
+          >
+            {niche}
+          </button>
+        ))}
       </div>
 
       {/* Locked overlay */}
@@ -380,16 +392,16 @@ const SwipeScreen: React.FC = () => {
             </div>
           )}
 
-          {/* Action buttons - no background, just border */}
+          {/* Action buttons - filled background style */}
           {idea && (
             <div className="flex items-center justify-center gap-5 py-3 shrink-0">
-              <button onClick={() => doSwipe("left")} className="flex h-[52px] w-[52px] items-center justify-center rounded-full border-2 border-skip/30">
+              <button onClick={() => doSwipe("left")} className="flex h-[52px] w-[52px] items-center justify-center rounded-full border-2 border-skip/40 bg-skip/10">
                 <X className="h-5 w-5 text-skip" />
               </button>
-              <button onClick={() => doSwipe("up")} className="flex h-[60px] w-[60px] items-center justify-center rounded-full border-2 border-script/30">
-                <Star className="h-6 w-6 text-script" />
+              <button onClick={() => doSwipe("up")} className="flex h-[62px] w-[62px] items-center justify-center rounded-full border-2 border-script/40 bg-script/10">
+                <Star className="h-6 w-6 text-script fill-script" />
               </button>
-              <button onClick={() => doSwipe("right")} className="flex h-[52px] w-[52px] items-center justify-center rounded-full border-2 border-save/30">
+              <button onClick={() => doSwipe("right")} className="flex h-[52px] w-[52px] items-center justify-center rounded-full border-2 border-save/40 bg-save/10">
                 <Check className="h-5 w-5 text-save" />
               </button>
             </div>
