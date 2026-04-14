@@ -24,6 +24,7 @@ const SwipeScreen: React.FC = () => {
   const [stampVisible, setStampVisible] = useState<"save" | "skip" | "script" | null>(null);
   const [showScript, setShowScript] = useState(false);
   const [currentScript, setCurrentScript] = useState<any>(null);
+  const [scriptIdea, setScriptIdea] = useState<ContentIdea | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showFirstTimeHint, setShowFirstTimeHint] = useState(false);
   const touchRef = useRef<{ x: number; y: number } | null>(null);
@@ -111,6 +112,7 @@ const SwipeScreen: React.FC = () => {
       return;
     }
     setCurrentScript(null);
+    setScriptIdea(idea);
     setShowScript(true);
     setIsGenerating(true);
     try {
@@ -415,7 +417,8 @@ const SwipeScreen: React.FC = () => {
         <ScriptModal
           script={currentScript}
           isLoading={isGenerating}
-          onClose={() => { setShowScript(false); setCurrentScript(null); }}
+          onClose={() => { setShowScript(false); setCurrentScript(null); setScriptIdea(null); }}
+          onRegenerate={() => { if (scriptIdea) generateScriptForIdea(scriptIdea); }}
         />
       )}
     </div>
