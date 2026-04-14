@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Check, CreditCard, Lock } from "lucide-react";
 import { useApp, PLANS } from "@/context/AppContext";
@@ -12,17 +12,60 @@ const PlansScreen: React.FC = () => {
   const currentPlan = user?.plan.name || "FREE";
   const [isYearly, setIsYearly] = useState(false);
   const [isLoading, setIsLoading] = useState<string | null>(null);
+  const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
+  const handledPaymentRef = useRef<string | null>(null);
 
   // Handle payment success redirect
   useEffect(() => {
     const paymentStatus = searchParams.get("payment");
-    const plan = searchParams.get("plan");
-    if (paymentStatus === "success" && plan) {
-      toast.success(`${plan} plan payment received! Your plan will be activated shortly.`);
-      // Refresh data to check if webhook already updated the plan
-      setTimeout(() => refreshData(), 3000);
+    const plan = searchParams.get("plan") as "CREATOR" | "PRO" | null;
+
+    if (paymentStatus !== "success" || !plan || !authUser) {
+      setIsVerifyingPayment(false);
+      return;
     }
-  }, [searchParams, refreshData]);
+
+    if (user?.plan.name === plan) {
+      setIsVerifyingPayment(false);
+      if (handledPaymentRef.current !== `${paymentStatus}:${plan}:done`) {
+        handledPaymentRef.current = `${paymentStatus}:${plan}:done`;
+        toast.success(`${plan} plan activated!`);
+        navigate("/plans", { replace: true });
+      }
+      return;
+    }
+
+    const paymentKey = `${paymentStatus}:${plan}`;
+    if (handledPaymentRef.current !== paymentKey) {
+      handledPaymentRef.current = paymentKey;
+      toast.success(`${plan} payment received. Activating your plan...`);
+    }
+
+    let attempts = 0;
+    let cancelled = false;
+    setIsVerifyingPayment(true);
+
+    const pollPlanStatus = async () => {
+      if (cancelled) return;
+      attempts += 1;
+      await refreshData();
+
+      if (!cancelled && attempts >= 10) {
+        setIsVerifyingPayment(false);
+        toast.error("Payment is taking longer than expected to sync. Please reopen Plans in a moment.");
+      }
+    };
+
+    pollPlanStatus().catch(() => {});
+    const intervalId = window.setInterval(() => {
+      pollPlanStatus().catch(() => {});
+    }, 2000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [searchParams, authUser, user?.plan.name, refreshData, navigate]);
 
   const creatorPrice = isYearly ? 3.99 : 5;
   const proPrice = isYearly ? 14.99 : 19;
@@ -67,6 +110,12 @@ const PlansScreen: React.FC = () => {
       </div>
       <p className="mt-1 px-4 text-sm text-muted-foreground">Choose your plan</p>
 
+      {isVerifyingPayment && (
+        <div className="mx-4 mt-3 rounded-2xl border border-save bg-save/10 px-4 py-3 text-sm text-foreground">
+          We received your payment and are activating your plan…
+        </div>
+      )}
+
       {/* Monthly/Yearly Toggle */}
       <div className="mx-4 mt-4 flex items-center justify-center gap-3">
         <span className={`text-sm font-semibold ${!isYearly ? "text-foreground" : "text-muted-foreground"}`}>Monthly</span>
@@ -110,7 +159,7 @@ const PlansScreen: React.FC = () => {
           {currentPlan !== "CREATOR" && (
             <button
               onClick={() => handleUpgrade("CREATOR")}
-              disabled={!!isLoading}
+               disabled={!!isLoading || isVerifyingPayment}
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-background py-3.5 text-sm font-semibold text-foreground disabled:opacity-50"
             >
               {isLoading === "CREATOR" ? (
@@ -135,7 +184,7 @@ const PlansScreen: React.FC = () => {
           {currentPlan !== "PRO" && (
             <button
               onClick={() => handleUpgrade("PRO")}
-              disabled={!!isLoading}
+               disabled={!!isLoading || isVerifyingPayment}
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-foreground py-3.5 text-sm font-semibold text-background disabled:opacity-50"
             >
               {isLoading === "PRO" ? (
