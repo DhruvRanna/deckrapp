@@ -30,7 +30,6 @@ const SwipeScreen: React.FC = () => {
   const [dragDelta, setDragDelta] = useState({ x: 0, y: 0 });
   const loadingRef = useRef(false);
   const [initialLoaded, setInitialLoaded] = useState(false);
-  const [selectedNiche, setSelectedNiche] = useState<string>("");
 
   useEffect(() => {
     if (!authUser) return;
@@ -41,15 +40,8 @@ const SwipeScreen: React.FC = () => {
     }
   }, [authUser]);
 
-  // Set default selected niche
-  useEffect(() => {
-    if (user?.niches?.length && !selectedNiche) {
-      setSelectedNiche(user.niches[0]);
-    }
-  }, [user?.niches, selectedNiche]);
-
   const getFallbackIdeas = useCallback((): ContentIdea[] => {
-    const niche = selectedNiche || user?.niches[0] || "General";
+    const niche = user?.niches[0] || "General";
     const platform = user?.platforms[0] || "YOUTUBE SHORTS";
     return [
       { id: `f${Date.now()}1`, platform, title: `Top ${niche} Secrets Nobody Tells You`, hook: `Everyone in ${niche} is talking about this but nobody is doing it right.`, insight: "Contrarian take drives engagement", tags: ["QUICK TIP", "60S", "LOW COMPETITION"], duration: "60s", competition: "Low", viralScore: 91, color: "save" },
@@ -58,15 +50,14 @@ const SwipeScreen: React.FC = () => {
       { id: `f${Date.now()}4`, platform, title: `${niche} Beginner to Expert in 30 Days`, hook: `From zero to expert in ${niche}. Here's the exact roadmap.`, insight: "Transformation stories perform well", tags: ["TUTORIAL", "LOW COMPETITION"], duration: "10min", competition: "Low", viralScore: 93, color: "viral" },
       { id: `f${Date.now()}5`, platform, title: `Stop Doing This in ${niche} Right Now!`, hook: `This common ${niche} advice is actually WRONG.`, insight: "Myth-busting content gets shares", tags: ["QUICK TIP", "30S"], duration: "30s", competition: "Low", viralScore: 90, color: "trend" },
     ];
-  }, [selectedNiche, user?.niches, user?.platforms]);
+  }, [user?.niches, user?.platforms]);
 
   const loadIdeas = useCallback(async () => {
     if (!user || loadingRef.current) return;
     loadingRef.current = true;
-    const niche = selectedNiche || user.niches[0] || "General";
     try {
       const { data, error } = await supabase.functions.invoke("generate-ideas", {
-        body: { niches: [niche], platforms: user.platforms, count: 10 },
+        body: { niches: user.niches, platforms: user.platforms, count: 10 },
       });
       if (error) throw error;
       if (data?.ideas) setIdeas(prev => [...prev, ...data.ideas]);
@@ -75,7 +66,7 @@ const SwipeScreen: React.FC = () => {
     } finally {
       loadingRef.current = false;
     }
-  }, [user, selectedNiche, getFallbackIdeas]);
+  }, [user, getFallbackIdeas]);
 
   useEffect(() => {
     if (user && !initialLoaded) {
@@ -84,23 +75,6 @@ const SwipeScreen: React.FC = () => {
       loadIdeas();
     }
   }, [user, initialLoaded, getFallbackIdeas, loadIdeas]);
-
-  // Reset ideas when niche changes
-  const handleNicheChange = (niche: string) => {
-    if (niche === selectedNiche) return;
-    setSelectedNiche(niche);
-    setIdeas([]);
-    setCurrentIndex(0);
-    loadingRef.current = false;
-    // Will reload via effect below
-  };
-
-  useEffect(() => {
-    if (selectedNiche && initialLoaded) {
-      setIdeas(getFallbackIdeas());
-      loadIdeas();
-    }
-  }, [selectedNiche]);
 
   const idea = currentIndex < ideas.length ? ideas[currentIndex] : null;
   const nextIdea = currentIndex + 1 < ideas.length ? ideas[currentIndex + 1] : null;
@@ -217,21 +191,9 @@ const SwipeScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Niche tabs */}
-      <div className="px-4 pb-2 shrink-0 flex gap-2 overflow-x-auto no-scrollbar">
-        {(user?.niches || ["General"]).map((niche) => (
-          <button
-            key={niche}
-            onClick={() => handleNicheChange(niche)}
-            className={`rounded-full px-3 py-1 text-[11px] font-medium whitespace-nowrap transition-colors ${
-              selectedNiche === niche
-                ? "bg-foreground text-background"
-                : "bg-muted text-muted-foreground border border-border"
-            }`}
-          >
-            {niche}
-          </button>
-        ))}
+      {/* Niche tag */}
+      <div className="px-4 pb-2 shrink-0">
+        <span className="rounded-full bg-foreground px-2.5 py-1 text-[10px] font-medium text-background">{user?.niches[0] || "General"}</span>
       </div>
 
       {/* Locked overlay */}
@@ -392,16 +354,16 @@ const SwipeScreen: React.FC = () => {
             </div>
           )}
 
-          {/* Action buttons - filled background style */}
+          {/* Action buttons - no background, just border */}
           {idea && (
             <div className="flex items-center justify-center gap-5 py-3 shrink-0">
-              <button onClick={() => doSwipe("left")} className="flex h-[52px] w-[52px] items-center justify-center rounded-full border-2 border-skip/40 bg-skip/10">
+              <button onClick={() => doSwipe("left")} className="flex h-[52px] w-[52px] items-center justify-center rounded-full border-2 border-skip/30">
                 <X className="h-5 w-5 text-skip" />
               </button>
-              <button onClick={() => doSwipe("up")} className="flex h-[62px] w-[62px] items-center justify-center rounded-full border-2 border-script/40 bg-script/10">
-                <Star className="h-6 w-6 text-script fill-script" />
+              <button onClick={() => doSwipe("up")} className="flex h-[60px] w-[60px] items-center justify-center rounded-full border-2 border-script/30">
+                <Star className="h-6 w-6 text-script" />
               </button>
-              <button onClick={() => doSwipe("right")} className="flex h-[52px] w-[52px] items-center justify-center rounded-full border-2 border-save/40 bg-save/10">
+              <button onClick={() => doSwipe("right")} className="flex h-[52px] w-[52px] items-center justify-center rounded-full border-2 border-save/30">
                 <Check className="h-5 w-5 text-save" />
               </button>
             </div>
