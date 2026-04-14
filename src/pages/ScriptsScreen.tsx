@@ -32,6 +32,7 @@ const ScriptsScreen: React.FC = () => {
     }
     setGenerating(idea.id);
     setViewScript(null);
+    setRegenerateIdea(idea);
     setScriptLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-script", {
