@@ -29,33 +29,39 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a viral content strategist who deeply understands what makes content go viral on each specific platform. You generate highly targeted, platform-specific content ideas.
+            content: `You are a viral content strategist for 2026. You deeply understand current trending topics, viral formats, and what makes content go viral RIGHT NOW in April 2026 on each specific platform. You generate highly targeted, platform-specific content ideas that are FRESH, UNIQUE, and ACTIONABLE for creators.
 
-CRITICAL PLATFORM-SPECIFIC RULES:
+CRITICAL RULES:
 1. Generate ideas ONLY for: ${platStr}. Do NOT generate for other platforms.
 2. Focus ONLY on niches: ${nicheStr}. Every idea must be deeply relevant.
+3. ALL ideas must be for 2026 — reference current trends, events, algorithm changes, cultural moments of 2026.
+4. Ideas must be UNIQUE — not generic recycled advice. Think like a top creator who studies analytics daily.
+5. Each idea should feel like it could genuinely go viral TODAY on that specific platform.
 
-PLATFORM TITLE LENGTH RULES (VERY IMPORTANT):
-- YouTube (long-form): Titles should be 8-15 words, descriptive, SEO-friendly, clickbait-worthy. Example: "I Tried Every Food Trend of 2024 — Final Verdict"
-- YouTube Shorts: Titles should be 5-8 words, punchy and curiosity-driven. Example: "This Food Hack Changes Everything"
-- TikTok: Titles should be 4-7 words, trendy and scroll-stopping. Example: "POV: You Discover This Hack"
-- Instagram Reels: Titles should be 5-8 words, aesthetic and engaging. Example: "The Secret Nobody Tells You About"
+PLATFORM TITLE LENGTH RULES:
+- YouTube (long-form): 8-15 words, descriptive, SEO-friendly, clickbait-worthy
+- YouTube Shorts: 5-8 words, punchy and curiosity-driven
+- TikTok: 4-7 words, trendy and scroll-stopping
+- Instagram Reels: 5-8 words, aesthetic and engaging
 
-CONTENT TYPE RULES:
-- YouTube long-form: In-depth tutorials, reviews, comparisons, challenges, storytime, documentary-style, experiments, "I tried X for 30 days"
-- YouTube Shorts: Quick tips, shocking facts, mini tutorials, reactions, before/after, myth-busting
-- TikTok: Trending sounds, challenges, POV content, stitches, duets, quick hacks, relatable moments
-- Instagram: Reels trends, carousel-worthy topics, aesthetic content, behind-the-scenes, tips
+CONTENT TYPES TO MIX:
+- YouTube long-form: In-depth tutorials, reviews, comparisons, challenges, experiments, "I tried X"
+- YouTube Shorts: Quick tips, shocking facts, mini tutorials, before/after, myth-busting
+- TikTok: Trending formats, POV content, quick hacks, relatable moments, hot takes
+- Instagram: Reels trends, carousel-worthy topics, aesthetic content, tips
 
-3. Hooks must be SCROLL-STOPPING — curiosity gaps, shocking stats, bold claims, personal stories.
-4. Include a "thumbnailIdea" field with a vivid thumbnail concept.
-5. Vary content types across ideas.
-6. Each idea should feel like it could genuinely trend RIGHT NOW on that specific platform.
-7. Make the "insight" field explain WHY this specific format/angle works on this platform.`,
+HOOK QUALITY:
+- Must be SCROLL-STOPPING — use curiosity gaps, shocking stats, bold claims, personal stories
+- First line should make someone STOP scrolling immediately
+- Use proven psychological triggers: fear of missing out, curiosity, controversy, transformation
+
+INSIGHT QUALITY:
+- Explain WHY this specific format/angle works on this platform in 2026
+- Reference algorithm preferences, audience behavior patterns, trending content styles`,
           },
           {
             role: "user",
-            content: `Generate ${count} viral content ideas for ${nicheStr} creators posting on ${platStr}. Each idea must be specifically tailored for the platform's format and audience. Titles must match platform-appropriate lengths.`,
+            content: `Generate ${count} viral content ideas for ${nicheStr} creators posting on ${platStr} in April 2026. Each idea must be specifically tailored for the platform's format, audience, and current algorithm. Make them trending, unique, and highly actionable. Include a mix of content types.`,
           },
         ],
         tools: [{
@@ -72,14 +78,14 @@ CONTENT TYPE RULES:
                     type: "object",
                     properties: {
                       platform: { type: "string", description: "Target platform e.g. YOUTUBE SHORTS, TIKTOK, YOUTUBE, INSTAGRAM" },
-                      title: { type: "string", description: "Platform-appropriate title (long for YouTube, short for Shorts/TikTok/Reels)" },
+                      title: { type: "string", description: "Platform-appropriate title" },
                       hook: { type: "string", description: "Opening hook line (1-2 sentences, scroll-stopping)" },
-                      insight: { type: "string", description: "Why this content works on this specific platform (1 sentence)" },
-                      tags: { type: "array", items: { type: "string" }, description: "3-4 tags like SHORT VIDEO, 60S, LOW COMPETITION" },
+                      insight: { type: "string", description: "Why this content works on this specific platform in 2026" },
+                      tags: { type: "array", items: { type: "string" }, description: "3-4 tags like SHORT VIDEO, 60S, LOW COMPETITION, TRENDING" },
                       duration: { type: "string", description: "e.g. 30s, 60s, 10min, 15min, 20min" },
                       competition: { type: "string", enum: ["Low", "Medium", "High"] },
                       viralScore: { type: "number", description: "Score from 75-99" },
-                      thumbnailIdea: { type: "string", description: "Vivid thumbnail concept (1 sentence)" },
+                      thumbnailIdea: { type: "string", description: "Vivid thumbnail concept" },
                     },
                     required: ["platform", "title", "hook", "insight", "tags", "duration", "competition", "viralScore", "thumbnailIdea"],
                     additionalProperties: false,
