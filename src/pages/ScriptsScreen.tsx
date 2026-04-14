@@ -13,6 +13,7 @@ const ScriptsScreen: React.FC = () => {
   const [viewScript, setViewScript] = useState<any>(null);
   const [generating, setGenerating] = useState<string | null>(null);
   const [scriptLoading, setScriptLoading] = useState(false);
+  const [regenerateIdea, setRegenerateIdea] = useState<any>(null);
 
   const savedIdeas = user?.savedIdeas || [];
   const scripts = user?.scripts || [];
@@ -155,7 +156,8 @@ const ScriptsScreen: React.FC = () => {
         <ScriptModal 
           script={viewScript} 
           isLoading={scriptLoading && !viewScript}
-          onClose={() => { setViewScript(null); setScriptLoading(false); }} 
+          onClose={() => { setViewScript(null); setScriptLoading(false); setRegenerateIdea(null); }}
+          onRegenerate={() => { if (regenerateIdea) handleGenerate(regenerateIdea); }}
         />
       )}
       <BottomNav />
