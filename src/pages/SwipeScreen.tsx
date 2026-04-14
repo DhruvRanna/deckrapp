@@ -49,7 +49,7 @@ const SwipeScreen: React.FC = () => {
   }, [user?.niches, selectedNiche]);
 
   const getFallbackIdeas = useCallback((): ContentIdea[] => {
-    const niche = user?.niches[0] || "General";
+    const niche = selectedNiche || user?.niches[0] || "General";
     const platform = user?.platforms[0] || "YOUTUBE SHORTS";
     return [
       { id: `f${Date.now()}1`, platform, title: `Top ${niche} Secrets Nobody Tells You`, hook: `Everyone in ${niche} is talking about this but nobody is doing it right.`, insight: "Contrarian take drives engagement", tags: ["QUICK TIP", "60S", "LOW COMPETITION"], duration: "60s", competition: "Low", viralScore: 91, color: "save" },
@@ -58,7 +58,7 @@ const SwipeScreen: React.FC = () => {
       { id: `f${Date.now()}4`, platform, title: `${niche} Beginner to Expert in 30 Days`, hook: `From zero to expert in ${niche}. Here's the exact roadmap.`, insight: "Transformation stories perform well", tags: ["TUTORIAL", "LOW COMPETITION"], duration: "10min", competition: "Low", viralScore: 93, color: "viral" },
       { id: `f${Date.now()}5`, platform, title: `Stop Doing This in ${niche} Right Now!`, hook: `This common ${niche} advice is actually WRONG.`, insight: "Myth-busting content gets shares", tags: ["QUICK TIP", "30S"], duration: "30s", competition: "Low", viralScore: 90, color: "trend" },
     ];
-  }, [user?.niches, user?.platforms]);
+  }, [selectedNiche, user?.niches, user?.platforms]);
 
   const loadIdeas = useCallback(async () => {
     if (!user || loadingRef.current) return;
