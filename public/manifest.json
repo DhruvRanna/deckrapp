@@ -19,7 +19,11 @@
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
   "screenshots": [
-    { "src": "/screenshot1.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow" },
-    { "src": "/screenshot2.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow" }
+    { "src": "/screenshot1.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "Swipe feed" },
+    { "src": "/screenshot2.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "AI scripts" },
+    { "src": "/screenshot3.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "Content calendar" },
+    { "src": "/screenshot4.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "Infinite ideas" },
+    { "src": "/screenshot5.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "Growth streak" },
+    { "src": "/screenshot6.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "Niche setup" }
   ]
 }
