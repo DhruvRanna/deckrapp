@@ -1,18 +1,33 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useApp, type ContentIdea } from "@/context/AppContext";
-import { X, Star, Check, Zap, User } from "lucide-react";
+import { X, Star, Check, Zap, User, Clock, Lightbulb, Flame, Play, TrendingUp, Hash, Timer, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
 import ScriptModal from "@/components/ScriptModal";
 
-const CARD_COLORS: Record<string, string> = {
-  save: "bg-save-light",
-  script: "bg-script-light",
-  skip: "bg-skip-light",
-  trend: "bg-trend",
-  viral: "bg-amber-50",
+// Map legacy color keys → aesthetic pastel themes (driven by CSS vars in index.css)
+const THEME_BY_COLOR: Record<string, string> = {
+  save: "theme-mint",
+  script: "theme-lavender",
+  skip: "theme-rose",
+  trend: "theme-sky",
+  viral: "theme-butter",
+};
+const THEME_CYCLE = ["theme-mint", "theme-lavender", "theme-peach", "theme-sky", "theme-butter", "theme-rose"];
+const themeFor = (idea: ContentIdea, idx: number) =>
+  THEME_BY_COLOR[idea.color] || THEME_CYCLE[idx % THEME_CYCLE.length];
+
+const tagIcon = (label: string) => {
+  const l = label.toUpperCase();
+  if (l.includes("60S") || l.includes("30S") || l.includes("SEC")) return Timer;
+  if (l.includes("TIP")) return Lightbulb;
+  if (l.includes("COMPETITION")) return TrendingUp;
+  if (l.includes("VIDEO") || l.includes("SHORT")) return Play;
+  if (l.includes("TREND")) return Flame;
+  if (l.includes("TUTORIAL")) return Eye;
+  return Hash;
 };
 
 const SwipeScreen: React.FC = () => {
