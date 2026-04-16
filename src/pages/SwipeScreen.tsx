@@ -268,8 +268,8 @@ const SwipeScreen: React.FC = () => {
       {/* Card area */}
       {!isLocked && (
         <>
-          <div className="mx-4 flex flex-1 min-h-0 items-center justify-center overflow-visible py-2">
-            <div className="relative w-full max-w-[22rem]" style={{ aspectRatio: "970 / 1385" }}>
+          <div className="mx-4 flex flex-1 min-h-0 items-stretch justify-center overflow-visible py-2">
+            <div className="relative w-full max-w-[22rem] flex-1 min-h-0">
               {nextIdea && (
                 <div
                   className={`swipe-card ${themeFor(nextIdea, currentIndex + 1)} absolute inset-0 rounded-[1.75rem] scale-[0.965] opacity-65 shadow-card-soft`}
