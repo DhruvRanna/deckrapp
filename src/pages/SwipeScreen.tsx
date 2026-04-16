@@ -317,11 +317,11 @@ const SwipeScreen: React.FC = () => {
 
                   <div className="mt-3 border-t border-[hsl(var(--t-text)/0.08)]" />
 
-                  {/* Middle content (grows to fill) */}
+                  {/* Middle content (scrolls if overflow) */}
                   <div className="flex flex-1 flex-col justify-between min-h-0 mt-3">
-                    <div className="space-y-3">
+                    <div className="space-y-3 overflow-y-auto no-scrollbar pr-1 flex-1 min-h-0">
                       {/* Title */}
-                      <h2 className="text-[1.45rem] font-black italic leading-[1.15] tracking-[-0.02em] t-text">
+                      <h2 className="text-[1.45rem] font-black italic leading-[1.15] tracking-[-0.02em] text-black">
                         {idea.title}
                       </h2>
 
