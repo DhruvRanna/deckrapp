@@ -20,7 +20,7 @@ const SplashScreen: React.FC = () => {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background">
       <div className="flex flex-col items-center">
-        <img src="/icon-512.png" alt="DECKR" className="w-28 h-28" />
+        <img src="/icon-512.png" alt="DECKR" className="w-28 h-28 rounded-2xl" />
       </div>
     </div>
   );
