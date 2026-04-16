@@ -222,25 +222,25 @@ const SwipeScreen: React.FC = () => {
   return (
     <div className="flex flex-col bg-background overflow-hidden" style={{ height: "100dvh" }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-2 shrink-0">
-        <h1 className="font-condensed text-xl">DECKR</h1>
+      <div className="flex items-center justify-between px-5 pt-6 pb-3 shrink-0">
+        <h1 className="font-condensed text-2xl">DECKR</h1>
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1 rounded-full border border-border px-2.5 py-1 text-[10px] font-medium">
+          <span className="flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-[11px] font-medium">
             <Zap className="h-3 w-3" /> {swipesUsed}/{swipesMax}
           </span>
-          <button onClick={() => navigate("/profile")} className="flex h-8 w-8 items-center justify-center rounded-full border border-border">
-            <User className="h-3.5 w-3.5" />
+          <button onClick={() => navigate("/profile")} className="flex h-9 w-9 items-center justify-center rounded-full border border-border">
+            <User className="h-4 w-4" />
           </button>
         </div>
       </div>
 
       {/* Niche tabs */}
-      <div className="px-4 pb-2 shrink-0 flex gap-2 overflow-x-auto no-scrollbar">
+      <div className="px-5 pb-3 shrink-0 flex gap-2 overflow-x-auto no-scrollbar">
         {(user?.niches || ["General"]).map((niche) => (
           <button
             key={niche}
             onClick={() => handleNicheChange(niche)}
-            className={`rounded-full px-3 py-1 text-[11px] font-medium whitespace-nowrap transition-colors ${
+            className={`rounded-full px-4 py-1.5 text-[12px] font-medium whitespace-nowrap transition-colors ${
               selectedNiche === niche
                 ? "bg-foreground text-background"
                 : "bg-muted text-muted-foreground border border-border"
@@ -268,24 +268,22 @@ const SwipeScreen: React.FC = () => {
       {/* Card area */}
       {!isLocked && (
         <>
-          <div className="mx-4 flex flex-1 min-h-0 items-center justify-center overflow-visible">
+          <div className="mx-4 flex flex-1 min-h-0 items-center justify-center overflow-visible py-2">
             <div className="relative w-full max-w-[22rem]" style={{ aspectRatio: "970 / 1385" }}>
               {nextIdea && (
                 <div
-                  className={`absolute inset-0 rounded-[1.6rem] ${CARD_COLORS[nextIdea.color] || "bg-trend"} scale-[0.965] opacity-65`}
-                  style={{ boxShadow: "0 4px 20px -8px rgba(0,0,0,0.08)" }}
+                  className={`swipe-card ${themeFor(nextIdea, currentIndex + 1)} absolute inset-0 rounded-[1.75rem] scale-[0.965] opacity-65 shadow-card-soft`}
                 />
               )}
 
               {idea && (
                 <div
-                  className={`relative flex flex-col rounded-[1.6rem] ${CARD_COLORS[idea.color] || "bg-trend"} px-5 pb-4 pt-4 h-full overflow-hidden ${animClass}`}
+                  className={`swipe-card ${themeFor(idea, currentIndex)} relative flex flex-col rounded-[1.75rem] px-5 py-5 h-full overflow-hidden shadow-card-premium ${animClass}`}
                   style={{
                     ...(!animClass
                       ? { transform: `translate(${dragDelta.x}px, ${dragDelta.y}px) rotate(${dragDelta.x * 0.05}deg)`, transition: dragDelta.x === 0 && dragDelta.y === 0 ? "transform 0.2s" : "none" }
                       : {}
                     ),
-                    boxShadow: "0 4px 20px -8px rgba(0,0,0,0.1)",
                   }}
                   onTouchStart={handleTouchStart}
                   onTouchMove={handleTouchMove}
@@ -307,78 +305,95 @@ const SwipeScreen: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Platform + Viral Score */}
+                  {/* Top row: Platform pill + Viral score pill */}
                   <div className="flex items-center justify-between gap-3">
-                    <span className="flex items-center gap-1 rounded-full border border-foreground/10 bg-background/55 px-2.5 py-1 text-[10px] font-semibold">▶ {idea.platform}</span>
-                    <span className="rounded-full border border-foreground/10 bg-background/55 px-2.5 py-1 text-[10px] font-semibold">{idea.viralScore}% 🔥</span>
+                    <span className="t-surface-strong t-primary inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold">
+                      <Play className="h-3 w-3 fill-current" /> {idea.platform}
+                    </span>
+                    <span className="t-surface-strong t-text inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold">
+                      {idea.viralScore}% <span>🔥</span>
+                    </span>
                   </div>
 
-                  <div className="mt-2.5 border-t border-foreground/10" />
+                  <div className="mt-3 border-t border-[hsl(var(--t-text)/0.08)]" />
 
-                  {/* Title */}
-                  <h2 className="mt-2.5 text-[1.35rem] font-black italic leading-[1.18] tracking-[-0.02em] text-foreground">{idea.title}</h2>
+                  {/* Middle content (grows to fill) */}
+                  <div className="flex flex-1 flex-col justify-between min-h-0 mt-3">
+                    <div className="space-y-3">
+                      {/* Title */}
+                      <h2 className="text-[1.45rem] font-black italic leading-[1.15] tracking-[-0.02em] t-text">
+                        {idea.title}
+                      </h2>
 
-                  {/* Hook section */}
-                  <div className="mt-3 rounded-xl border border-foreground/10 bg-background/30 px-3 py-2.5">
-                    <p className="text-[10px] font-semibold tracking-[0.25em] text-save">HOOK</p>
-                    <p className="mt-1 text-[0.82rem] italic leading-[1.35] text-foreground/80">"{idea.hook}"</p>
-                  </div>
+                      {/* Hook */}
+                      <div className="t-surface rounded-2xl px-4 py-3">
+                        <p className="text-[10px] font-bold tracking-[0.25em] t-primary">HOOK</p>
+                        <p className="mt-1.5 text-[0.88rem] italic leading-[1.4] t-text">
+                          "{idea.hook}"
+                        </p>
+                      </div>
 
-                  {/* Insight */}
-                  <p className="mt-2.5 flex items-start gap-1.5 text-[10px] leading-[1.4] text-muted-foreground">
-                    <span>💡</span>
-                    <span>{idea.insight}</span>
-                  </p>
+                      {/* Insight */}
+                      <p className="flex items-start gap-1.5 text-[11px] leading-[1.4] t-muted">
+                        <Lightbulb className="h-3.5 w-3.5 shrink-0 mt-px t-primary" />
+                        <span>{idea.insight}</span>
+                      </p>
 
-                  {/* Tags */}
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {idea.tags.slice(0, 3).map((chip) => (
-                      <span key={chip} className="rounded-full border border-foreground/10 bg-background/30 px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.04em]">
-                        {chip}
-                      </span>
-                    ))}
-                  </div>
-                  
-                  {/* Hashtags */}
-                  <div className="mt-1.5 flex flex-wrap gap-1.5">
-                    {getHashtags(idea).map((h) => (
-                      <span key={h} className="rounded-full border border-save/20 bg-save-light px-2 py-0.5 text-[9px] font-medium text-save">
-                        {h}
-                      </span>
-                    ))}
-                  </div>
+                      {/* Tags */}
+                      <div className="flex flex-wrap gap-1.5">
+                        {idea.tags.slice(0, 3).map((chip) => {
+                          const Icon = tagIcon(chip);
+                          return (
+                            <span key={chip} className="t-surface t-primary inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.04em]">
+                              <Icon className="h-3 w-3" /> {chip}
+                            </span>
+                          );
+                        })}
+                      </div>
 
-                  {/* Bottom metrics */}
-                  <div className="mt-2.5 grid grid-cols-3 gap-1.5">
-                    <div className="rounded-lg border border-foreground/10 bg-background/30 px-2 py-1.5">
-                      <p className="text-[8px] font-semibold tracking-[0.1em] text-muted-foreground">BEST TIME</p>
-                      <p className="mt-0.5 text-[11px] font-bold text-foreground">{idea.platform.includes("TIKTOK") ? "6–9 PM" : idea.platform.includes("YOUTUBE") ? "2–5 PM" : "11AM–1PM"}</p>
+                      {/* Hashtags */}
+                      <div className="flex flex-wrap gap-1.5">
+                        {getHashtags(idea).map((h) => (
+                          <span key={h} className="t-surface t-primary rounded-full px-2.5 py-1 text-[10px] font-semibold">
+                            {h}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                    <div className="rounded-lg border border-foreground/10 bg-background/30 px-2 py-1.5">
-                      <p className="text-[8px] font-semibold tracking-[0.1em] text-muted-foreground">REACH</p>
-                      <p className="mt-0.5 text-[11px] font-bold text-foreground">{idea.viralScore >= 90 ? "50K+" : idea.viralScore >= 85 ? "10K+" : "5K+"}</p>
-                    </div>
-                    <div className="rounded-lg border border-foreground/10 bg-background/30 px-2 py-1.5">
-                      <p className="text-[8px] font-semibold tracking-[0.1em] text-muted-foreground">DURATION</p>
-                      <p className="mt-0.5 text-[11px] font-bold text-foreground">{idea.duration}</p>
-                    </div>
-                  </div>
 
-                  {/* Viral Potential Bar */}
-                  <div className="mt-2 rounded-lg border border-foreground/10 bg-background/30 px-2.5 py-1.5">
-                    <div className="flex items-center justify-between">
-                      <p className="text-[8px] font-semibold tracking-[0.1em] text-muted-foreground">VIRAL POTENTIAL</p>
-                      <p className="text-[10px] font-bold text-save">{idea.viralScore}%</p>
-                    </div>
-                    <div className="mt-1 h-1.5 w-full rounded-full bg-foreground/10">
-                      <div className="h-full rounded-full bg-save" style={{ width: `${idea.viralScore}%` }} />
+                    {/* Bottom: data grid + viral bar */}
+                    <div className="space-y-2 mt-3">
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="t-surface rounded-xl px-2.5 py-2">
+                          <p className="text-[8.5px] font-semibold tracking-[0.1em] t-muted">BEST TIME</p>
+                          <p className="mt-0.5 text-[12px] font-extrabold t-text">{idea.platform.includes("TIKTOK") ? "6–9 PM" : idea.platform.includes("YOUTUBE") ? "2–5 PM" : "11AM–1PM"}</p>
+                        </div>
+                        <div className="t-surface rounded-xl px-2.5 py-2">
+                          <p className="text-[8.5px] font-semibold tracking-[0.1em] t-muted">REACH</p>
+                          <p className="mt-0.5 text-[12px] font-extrabold t-text">{idea.viralScore >= 90 ? "50K+" : idea.viralScore >= 85 ? "10K+" : "5K+"}</p>
+                        </div>
+                        <div className="t-surface rounded-xl px-2.5 py-2">
+                          <p className="text-[8.5px] font-semibold tracking-[0.1em] t-muted">DURATION</p>
+                          <p className="mt-0.5 text-[12px] font-extrabold t-text">{idea.duration}</p>
+                        </div>
+                      </div>
+
+                      <div className="t-surface rounded-xl px-3 py-2">
+                        <div className="flex items-center justify-between">
+                          <p className="text-[8.5px] font-semibold tracking-[0.1em] t-muted">VIRAL POTENTIAL</p>
+                          <p className="text-[11px] font-extrabold t-primary">{idea.viralScore}%</p>
+                        </div>
+                        <div className="mt-1.5 h-2 w-full rounded-full t-primary-faint overflow-hidden">
+                          <div className="h-full rounded-full t-primary-bg" style={{ width: `${idea.viralScore}%` }} />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
 
               {!idea && (
-                <div className="flex items-center justify-center rounded-[1.6rem] bg-card shadow-card py-20">
+                <div className="flex items-center justify-center rounded-[1.75rem] bg-card shadow-card-soft py-20 h-full">
                   <div className="text-center">
                     <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
                     <p className="mt-4 text-sm text-muted-foreground">Loading content ideas...</p>
@@ -409,16 +424,16 @@ const SwipeScreen: React.FC = () => {
             </div>
           )}
 
-          {/* Action buttons - filled background style */}
+          {/* Action buttons - more breathing room from bottom nav */}
           {idea && (
-            <div className="flex items-center justify-center gap-5 py-3 shrink-0">
-              <button onClick={() => doSwipe("left")} className="flex h-[52px] w-[52px] items-center justify-center rounded-full border-2 border-skip/40 bg-skip/10">
+            <div className="flex items-center justify-center gap-6 pt-4 pb-6 shrink-0">
+              <button onClick={() => doSwipe("left")} className="flex h-[56px] w-[56px] items-center justify-center rounded-full border-2 border-skip/30 bg-skip/10 active:scale-95 transition-transform">
                 <X className="h-5 w-5 text-skip" />
               </button>
-              <button onClick={() => doSwipe("up")} className="flex h-[62px] w-[62px] items-center justify-center rounded-full border-2 border-script/40 bg-script/10">
+              <button onClick={() => doSwipe("up")} className="flex h-[66px] w-[66px] items-center justify-center rounded-full border-2 border-script/30 bg-script/10 active:scale-95 transition-transform">
                 <Star className="h-6 w-6 text-script fill-script" />
               </button>
-              <button onClick={() => doSwipe("right")} className="flex h-[52px] w-[52px] items-center justify-center rounded-full border-2 border-save/40 bg-save/10">
+              <button onClick={() => doSwipe("right")} className="flex h-[56px] w-[56px] items-center justify-center rounded-full border-2 border-save/30 bg-save/10 active:scale-95 transition-transform">
                 <Check className="h-5 w-5 text-save" />
               </button>
             </div>
