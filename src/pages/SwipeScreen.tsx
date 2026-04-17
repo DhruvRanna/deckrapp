@@ -82,17 +82,26 @@ const SwipeScreen: React.FC = () => {
     loadingRef.current = true;
     const niche = selectedNiche || user.niches[0] || "General";
     try {
+      // Send recently-shown titles so the AI avoids duplicates across batches.
+      const recentTitles = ideas.slice(-30).map(i => i.title);
       const { data, error } = await supabase.functions.invoke("generate-ideas", {
-        body: { niches: [niche], platforms: user.platforms, count: 10 },
+        body: { niches: [niche], platforms: user.platforms, count: 10, recentTitles },
       });
       if (error) throw error;
-      if (data?.ideas) setIdeas(prev => [...prev, ...data.ideas]);
+      if (data?.ideas?.length) {
+        setIdeas(prev => [...prev, ...data.ideas]);
+      } else if (data?.fallback) {
+        setIdeas(prev => prev.length < 5 ? [...prev, ...getFallbackIdeas()] : prev);
+        if (data.reason === "credits") {
+          toast.warning("AI credits low — showing template ideas. Add credits for fresh AI ideas.");
+        }
+      }
     } catch {
       setIdeas(prev => prev.length < 3 ? [...prev, ...getFallbackIdeas()] : prev);
     } finally {
       loadingRef.current = false;
     }
-  }, [user, selectedNiche, getFallbackIdeas]);
+  }, [user, selectedNiche, getFallbackIdeas, ideas]);
 
   useEffect(() => {
     if (user && !initialLoaded) {
@@ -153,7 +162,11 @@ const SwipeScreen: React.FC = () => {
         captionIdea: data.captionIdea, createdAt: savedScript.created_at,
       });
       await refreshData();
-      toast.success("Script generated!");
+      if (data.fallback) {
+        toast.warning("AI credits low — used a smart template. You can edit it.");
+      } else {
+        toast.success("Script generated!");
+      }
     } catch (err: unknown) {
       const parsed = await parseAiError(err);
       toast.error(parsed.message);
