@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
 import ScriptModal from "@/components/ScriptModal";
+import { parseAiError } from "@/lib/aiErrors";
 
 // Map legacy color keys → aesthetic pastel themes (driven by CSS vars in index.css)
 const THEME_BY_COLOR: Record<string, string> = {
@@ -153,8 +154,9 @@ const SwipeScreen: React.FC = () => {
       });
       await refreshData();
       toast.success("Script generated!");
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to generate script");
+    } catch (err: unknown) {
+      const parsed = await parseAiError(err);
+      toast.error(parsed.message);
       setShowScript(false);
     } finally {
       setIsGenerating(false);

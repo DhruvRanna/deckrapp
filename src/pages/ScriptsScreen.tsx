@@ -5,6 +5,7 @@ import { Search, Trash2, Copy, Bookmark, FileText, Eye } from "lucide-react";
 import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
 import ScriptModal from "@/components/ScriptModal";
+import { parseAiError } from "@/lib/aiErrors";
 
 const ScriptsScreen: React.FC = () => {
   const { user, authUser, deleteIdea, deleteScript, canGenerateScript, refreshData } = useApp();
@@ -57,8 +58,9 @@ const ScriptsScreen: React.FC = () => {
         captionIdea: data.captionIdea, createdAt: saved.created_at,
       });
       toast.success("Script generated & saved!");
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to generate script");
+    } catch (err: unknown) {
+      const parsed = await parseAiError(err);
+      toast.error(parsed.message);
     } finally {
       setGenerating(null);
       setScriptLoading(false);
