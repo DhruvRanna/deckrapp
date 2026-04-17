@@ -153,8 +153,9 @@ const SwipeScreen: React.FC = () => {
       });
       await refreshData();
       toast.success("Script generated!");
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to generate script");
+    } catch (err: unknown) {
+      const parsed = await parseAiError(err);
+      toast.error(parsed.message);
       setShowScript(false);
     } finally {
       setIsGenerating(false);

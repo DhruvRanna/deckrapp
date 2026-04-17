@@ -57,8 +57,9 @@ const ScriptsScreen: React.FC = () => {
         captionIdea: data.captionIdea, createdAt: saved.created_at,
       });
       toast.success("Script generated & saved!");
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to generate script");
+    } catch (err: unknown) {
+      const parsed = await parseAiError(err);
+      toast.error(parsed.message);
     } finally {
       setGenerating(null);
       setScriptLoading(false);
