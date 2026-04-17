@@ -5,6 +5,7 @@ import { Search, Trash2, Copy, Bookmark, FileText, Eye } from "lucide-react";
 import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
 import ScriptModal from "@/components/ScriptModal";
+import { parseAiError } from "@/lib/aiErrors";
 
 const ScriptsScreen: React.FC = () => {
   const { user, authUser, deleteIdea, deleteScript, canGenerateScript, refreshData } = useApp();
