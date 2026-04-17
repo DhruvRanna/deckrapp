@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { generateWithFallback, AllProvidersFailedError, aiVariety } from "../_shared/aiProviders.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,134 +8,115 @@ const corsHeaders = {
 
 const CARD_COLORS = ["save", "script", "skip", "viral", "trend"];
 
+const VARIETY_ANGLES = [
+  "controversial hot take", "personal failure story", "data-driven analysis", "behind-the-scenes secret",
+  "myth-busting comparison", "before/after transformation", "day-in-the-life", "rapid-fire tips list",
+  "expert interview style", "experiment / 'I tried X for 30 days'", "reaction to current trend",
+  "case study breakdown", "common mistake exposé", "tool/app review", "prediction for the future",
+];
+
+const FORMATS = [
+  "POV / first-person", "tutorial walkthrough", "listicle countdown", "story-time confession",
+  "challenge / dare", "Q&A response", "duet/stitch reaction", "mini documentary",
+];
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { niches, platforms, count = 10 } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
-
+    const { niches, platforms, count = 10, recentTitles = [] } = await req.json();
     const nicheStr = (niches || ["General"]).join(", ");
     const platStr = (platforms || ["YouTube Shorts"]).join(", ");
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          {
-            role: "system",
-            content: `You are a viral content strategist for 2026. You deeply understand current trending topics, viral formats, and what makes content go viral RIGHT NOW in April 2026 on each specific platform. You generate highly targeted, platform-specific content ideas that are FRESH, UNIQUE, and ACTIONABLE for creators.
+    // Pick a few random angles/formats to nudge the model toward NEW territory each call
+    const seedAngles = aiVariety.shuffle(VARIETY_ANGLES).slice(0, 5).join(", ");
+    const seedFormats = aiVariety.shuffle(FORMATS).slice(0, 4).join(", ");
+    const today = new Date().toISOString().slice(0, 10);
+    const sessionSeed = crypto.randomUUID().slice(0, 8);
+
+    const avoidStr = (recentTitles as string[]).slice(-30).map(t => `- ${t}`).join("\n") || "(none yet)";
+
+    const systemPrompt = `You are a viral content strategist for ${today}. You deeply understand trending topics, viral formats, and what makes content go viral RIGHT NOW on each specific platform. Generate FRESH, UNIQUE, ACTIONABLE ideas.
 
 CRITICAL RULES:
 1. Generate ideas ONLY for: ${platStr}. Do NOT generate for other platforms.
 2. Focus ONLY on niches: ${nicheStr}. Every idea must be deeply relevant.
-3. ALL ideas must be for 2026 — reference current trends, events, algorithm changes, cultural moments of 2026.
-4. Ideas must be UNIQUE — not generic recycled advice. Think like a top creator who studies analytics daily.
-5. Each idea should feel like it could genuinely go viral TODAY on that specific platform.
+3. Reference ${today} trends, algorithm changes, cultural moments.
+4. Ideas must be UNIQUE — avoid generic recycled advice.
+5. AVOID DUPLICATES: do NOT repeat or paraphrase any of these recently shown titles:
+${avoidStr}
+6. Each of the ${count} ideas must use a DIFFERENT angle and format.
 
-PLATFORM TITLE LENGTH RULES:
-- YouTube (long-form): 8-15 words, descriptive, SEO-friendly, clickbait-worthy
-- YouTube Shorts: 5-8 words, punchy and curiosity-driven
-- TikTok: 4-7 words, trendy and scroll-stopping
-- Instagram Reels: 5-8 words, aesthetic and engaging
+VARIETY SEEDS (mix these angles): ${seedAngles}
+FORMATS to mix: ${seedFormats}
+Session seed (use to ensure novelty): ${sessionSeed}
 
-CONTENT TYPES TO MIX:
-- YouTube long-form: In-depth tutorials, reviews, comparisons, challenges, experiments, "I tried X"
-- YouTube Shorts: Quick tips, shocking facts, mini tutorials, before/after, myth-busting
-- TikTok: Trending formats, POV content, quick hacks, relatable moments, hot takes
-- Instagram: Reels trends, carousel-worthy topics, aesthetic content, tips
+PLATFORM TITLE LENGTH:
+- YouTube long-form: 8-15 words, descriptive, SEO-friendly
+- YouTube Shorts: 5-8 words, punchy
+- TikTok: 4-7 words, scroll-stopping
+- Instagram Reels: 5-8 words, aesthetic
 
-HOOK QUALITY:
-- Must be SCROLL-STOPPING — use curiosity gaps, shocking stats, bold claims, personal stories
-- First line should make someone STOP scrolling immediately
-- Use proven psychological triggers: fear of missing out, curiosity, controversy, transformation
+HOOK QUALITY: scroll-stopping, curiosity gap, shocking stat, bold claim, or personal story.
+INSIGHT: explain WHY this format/angle works on this platform right now.`;
 
-INSIGHT QUALITY:
-- Explain WHY this specific format/angle works on this platform in 2026
-- Reference algorithm preferences, audience behavior patterns, trending content styles`,
-          },
-          {
-            role: "user",
-            content: `Generate ${count} viral content ideas for ${nicheStr} creators posting on ${platStr} in April 2026. Each idea must be specifically tailored for the platform's format, audience, and current algorithm. Make them trending, unique, and highly actionable. Include a mix of content types.`,
-          },
-        ],
-        tools: [{
-          type: "function",
-          function: {
-            name: "return_ideas",
-            description: "Return content ideas array",
-            parameters: {
-              type: "object",
-              properties: {
-                ideas: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      platform: { type: "string", description: "Target platform e.g. YOUTUBE SHORTS, TIKTOK, YOUTUBE, INSTAGRAM" },
-                      title: { type: "string", description: "Platform-appropriate title" },
-                      hook: { type: "string", description: "Opening hook line (1-2 sentences, scroll-stopping)" },
-                      insight: { type: "string", description: "Why this content works on this specific platform in 2026" },
-                      tags: { type: "array", items: { type: "string" }, description: "3-4 tags like SHORT VIDEO, 60S, LOW COMPETITION, TRENDING" },
-                      duration: { type: "string", description: "e.g. 30s, 60s, 10min, 15min, 20min" },
-                      competition: { type: "string", enum: ["Low", "Medium", "High"] },
-                      viralScore: { type: "number", description: "Score from 75-99" },
-                      thumbnailIdea: { type: "string", description: "Vivid thumbnail concept" },
-                    },
-                    required: ["platform", "title", "hook", "insight", "tags", "duration", "competition", "viralScore", "thumbnailIdea"],
-                    additionalProperties: false,
-                  },
+    const ideas = await generateWithFallback({
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `Generate ${count} viral content ideas for ${nicheStr} creators on ${platStr}. Mix content types, angles, and formats. Make each one feel different from the others. Session: ${sessionSeed}` },
+      ],
+      tool: {
+        name: "return_ideas",
+        description: "Return content ideas array",
+        parameters: {
+          type: "object",
+          properties: {
+            ideas: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  platform: { type: "string", description: "e.g. YOUTUBE SHORTS, TIKTOK, YOUTUBE, INSTAGRAM" },
+                  title: { type: "string" },
+                  hook: { type: "string", description: "Opening hook line, scroll-stopping" },
+                  insight: { type: "string", description: "Why it works on this platform now" },
+                  tags: { type: "array", items: { type: "string" } },
+                  duration: { type: "string", description: "e.g. 30s, 60s, 10min" },
+                  competition: { type: "string", enum: ["Low", "Medium", "High"] },
+                  viralScore: { type: "number" },
+                  thumbnailIdea: { type: "string" },
                 },
+                required: ["platform", "title", "hook", "insight", "tags", "duration", "competition", "viralScore", "thumbnailIdea"],
+                additionalProperties: false,
               },
-              required: ["ideas"],
-              additionalProperties: false,
             },
           },
-        }],
-        tool_choice: { type: "function", function: { name: "return_ideas" } },
-      }),
+          required: ["ideas"],
+          additionalProperties: false,
+        },
+      },
+      temperature: 1.05,
     });
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limited." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      throw new Error("AI gateway error");
-    }
-
-    const data = await response.json();
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) throw new Error("No tool call in response");
-
-    const { ideas } = JSON.parse(toolCall.function.arguments);
-    const enriched = ideas.map((idea: any, i: number) => ({
+    const list = (ideas?.ideas || []).map((idea: any, i: number) => ({
       ...idea,
       id: crypto.randomUUID(),
-      color: CARD_COLORS[i % CARD_COLORS.length],
+      color: CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)],
     }));
 
-    return new Response(JSON.stringify({ ideas: enriched }), {
+    return new Response(JSON.stringify({ ideas: list }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("generate-ideas error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    if (e instanceof AllProvidersFailedError) {
+      // Return 200 with fallback signal so the client can use templates without crashing.
+      return new Response(JSON.stringify({ fallback: true, reason: e.reason, error: e.message, ideas: [] }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ fallback: true, reason: "generic", error: e instanceof Error ? e.message : "Unknown error", ideas: [] }), {
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

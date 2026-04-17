@@ -1,92 +1,82 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { generateWithFallback, AllProvidersFailedError } from "../_shared/aiProviders.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function templateScript(title: string, platform: string, hook: string, niche: string, duration: string) {
+  const cleanHook = hook || `Most people get ${niche} completely wrong.`;
+  return {
+    hookText: cleanHook,
+    bodyText: `[OPEN — 0-3s]\n${cleanHook} Stop scrolling — this matters.\n\n[MIDDLE — main value]\nHere are 3 things nobody tells you about ${title.toLowerCase()}:\n1. The first thing most people miss is the foundation — without it, nothing else works.\n2. Then comes the part that actually moves the needle. Most creators skip straight to this and wonder why it fails.\n3. Finally, the small detail that 10x's everything once you understand it.\n\n[CLOSE]\nIf this hit, follow for more ${niche} breakdowns. Save this so you don't forget.`,
+    ctaText: `Follow for more ${niche} content. Comment "YES" if you're trying this.`,
+    deliveryTip: `Shoot in vertical 9:16 for ${platform}. Look directly into the camera for the hook. Use quick cuts every 1.5-2s to keep retention high. Add bold on-screen text for each numbered point.`,
+    hashtags: [niche.replace(/\s+/g, ""), platform.replace(/\s+/g, ""), "ContentCreator", "Viral", "FYP", "Trending2026", "CreatorTips", "Shorts"],
+    thumbnailIdea: `Bold contrasting colors. Your face on the left with a shocked/intense expression. Big block text on the right reading "${title.split(" ").slice(0, 4).join(" ").toUpperCase()}". Add a red circle/arrow highlighting one key element.`,
+    captionIdea: `${cleanHook} 🔥\n\nThe truth about ${niche} that nobody is talking about. Save this for later 👇\n\n#${niche.replace(/\s+/g, "")} #${platform.replace(/\s+/g, "")}`,
+  };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const { title, platform, hook, duration, niche } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     const systemPrompt = `You are a professional content script writer and social media strategist. Generate engaging, platform-optimized scripts with complete creator resources.
 
-Return JSON with these fields:
-- hookText: The opening hook (first 3 seconds)
-- bodyText: The main script body with [OPEN], [MIDDLE], [CLOSE] sections and scene directions
-- ctaText: A compelling call-to-action
-- deliveryTip: Camera/delivery advice for the creator
-- hashtags: Array of 8-12 relevant trending hashtags (without # symbol)
-- thumbnailIdea: A detailed thumbnail concept (text overlay, expression, colors, layout)
-- captionIdea: A ready-to-post caption/description for the video (2-3 lines with emojis)
+Return these fields via the tool call:
+- hookText: opening hook (first 3 seconds)
+- bodyText: main script body with [OPEN], [MIDDLE], [CLOSE] sections and scene directions
+- ctaText: compelling call-to-action
+- deliveryTip: camera/delivery advice
+- hashtags: 8-12 relevant trending hashtags (without # symbol)
+- thumbnailIdea: detailed thumbnail concept
+- captionIdea: ready-to-post caption with emojis
 
-Keep the tone energetic, authentic, and optimized for ${platform}. Duration target: ${duration}. Niche: ${niche}.`;
+Tone: energetic, authentic, optimized for ${platform}. Duration: ${duration}. Niche: ${niche}. Make this script feel UNIQUE — not generic.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+    try {
+      const script = await generateWithFallback({
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Generate a complete script and creator resources for:\nTitle: "${title}"\nHook: "${hook}"\nPlatform: ${platform}\nNiche: ${niche}\nDuration: ${duration}` },
         ],
-        tools: [{
-          type: "function",
-          function: {
-            name: "generate_script",
-            description: "Generate a structured content script with creator resources",
-            parameters: {
-              type: "object",
-              properties: {
-                hookText: { type: "string", description: "The opening hook section" },
-                bodyText: { type: "string", description: "The main script body with scene directions" },
-                ctaText: { type: "string", description: "Call to action text" },
-                deliveryTip: { type: "string", description: "Camera and delivery advice" },
-                hashtags: { type: "array", items: { type: "string" }, description: "8-12 trending hashtags without # symbol" },
-                thumbnailIdea: { type: "string", description: "Detailed thumbnail concept" },
-                captionIdea: { type: "string", description: "Ready-to-post video caption/description" },
-              },
-              required: ["hookText", "bodyText", "ctaText", "deliveryTip", "hashtags", "thumbnailIdea", "captionIdea"],
-              additionalProperties: false,
+        tool: {
+          name: "generate_script",
+          description: "Generate a structured content script with creator resources",
+          parameters: {
+            type: "object",
+            properties: {
+              hookText: { type: "string" },
+              bodyText: { type: "string" },
+              ctaText: { type: "string" },
+              deliveryTip: { type: "string" },
+              hashtags: { type: "array", items: { type: "string" } },
+              thumbnailIdea: { type: "string" },
+              captionIdea: { type: "string" },
             },
+            required: ["hookText", "bodyText", "ctaText", "deliveryTip", "hashtags", "thumbnailIdea", "captionIdea"],
+            additionalProperties: false,
           },
-        }],
-        tool_choice: { type: "function", function: { name: "generate_script" } },
-      }),
-    });
+        },
+        temperature: 0.9,
+      });
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limited. Please try again later." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      throw new Error("AI gateway error");
+      return new Response(JSON.stringify({ ...script, fallback: false }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    } catch (e) {
+      // Graceful fallback: deliver a template script so the user always gets something.
+      const reason = e instanceof AllProvidersFailedError ? e.reason : "generic";
+      console.warn("[generate-script] using template fallback:", reason, (e as Error).message);
+      const tpl = templateScript(title, platform, hook, niche || "Content", duration || "60s");
+      return new Response(JSON.stringify({ ...tpl, fallback: true, reason }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
-
-    const data = await response.json();
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) throw new Error("No tool call in response");
-
-    const script = JSON.parse(toolCall.function.arguments);
-    return new Response(JSON.stringify(script), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
   } catch (e) {
     console.error("generate-script error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
