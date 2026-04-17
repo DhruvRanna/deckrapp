@@ -1,4 +1,4 @@
-const CACHE_NAME = 'deckr-v4';
+const CACHE_NAME = 'deckr-v5';
 const urlsToCache = ['/', '/swipe', '/calendar', '/scripts', '/profile', '/manifest.json', '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png', '/screenshot1.png', '/screenshot2.png', '/screenshot3.png', '/screenshot4.png', '/screenshot5.png', '/screenshot6.png'];
 
 self.addEventListener('install', event => {
