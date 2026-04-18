@@ -349,7 +349,7 @@ const SwipeScreen: React.FC = () => {
                       </span>
                       {idea.trending && (
                         <span
-                          className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-orange-500 to-red-500 px-2.5 py-1.5 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-sm shrink-0 animate-pulse"
+                          className="inline-flex items-center gap-1 rounded-full bg-viral px-2.5 py-1.5 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-sm shrink-0 animate-pulse"
                           title="Inspired by live YouTube trending data"
                         >
                           🔥 Trending
