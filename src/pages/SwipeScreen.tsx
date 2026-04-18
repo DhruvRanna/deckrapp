@@ -341,12 +341,22 @@ const SwipeScreen: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Top row: Platform pill + Viral score pill */}
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="t-surface-strong t-primary inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold">
-                      <Play className="h-3 w-3 fill-current" /> {idea.platform}
-                    </span>
-                    <span className="t-surface-strong t-text inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold">
+                  {/* Top row: Platform pill + Trending badge + Viral score pill */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="t-surface-strong t-primary inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold shrink-0">
+                        <Play className="h-3 w-3 fill-current" /> {idea.platform}
+                      </span>
+                      {idea.trending && (
+                        <span
+                          className="inline-flex items-center gap-1 rounded-full bg-viral px-2.5 py-1.5 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-sm shrink-0 animate-pulse"
+                          title="Inspired by live YouTube trending data"
+                        >
+                          🔥 Trending
+                        </span>
+                      )}
+                    </div>
+                    <span className="t-surface-strong t-text inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold shrink-0">
                       {idea.viralScore}% <span>🔥</span>
                     </span>
                   </div>
