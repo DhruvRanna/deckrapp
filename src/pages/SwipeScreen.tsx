@@ -92,9 +92,6 @@ const SwipeScreen: React.FC = () => {
         setIdeas(prev => [...prev, ...data.ideas]);
       } else if (data?.fallback) {
         setIdeas(prev => prev.length < 5 ? [...prev, ...getFallbackIdeas()] : prev);
-        if (data.reason === "credits") {
-          toast.warning("AI credits low — showing template ideas. Add credits for fresh AI ideas.");
-        }
       }
     } catch {
       setIdeas(prev => prev.length < 3 ? [...prev, ...getFallbackIdeas()] : prev);
