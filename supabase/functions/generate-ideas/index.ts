@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { generateWithFallback, AllProvidersFailedError, aiVariety } from "../_shared/aiProviders.ts";
+import { getYouTubeTrendingTitles } from "../_shared/youtubeTrends.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -36,6 +37,18 @@ serve(async (req) => {
 
     const avoidStr = (recentTitles as string[]).slice(-30).map(t => `- ${t}`).join("\n") || "(none yet)";
 
+    // Pull live YouTube trending titles for each niche (cached 1h, runs in parallel).
+    const trendingByNiche = await Promise.all(
+      (niches || ["General"]).slice(0, 3).map(async (n: string) => ({
+        niche: n,
+        titles: await getYouTubeTrendingTitles(n, 8),
+      }))
+    );
+    const trendingBlock = trendingByNiche
+      .filter(t => t.titles.length > 0)
+      .map(t => `${t.niche}:\n${t.titles.map(x => `  • ${x}`).join("\n")}`)
+      .join("\n\n") || "(no live data available)";
+
     const systemPrompt = `You are a viral content strategist for ${today}. You deeply understand trending topics, viral formats, and what makes content go viral RIGHT NOW on each specific platform. Generate FRESH, UNIQUE, ACTIONABLE ideas.
 
 CRITICAL RULES:
@@ -46,6 +59,9 @@ CRITICAL RULES:
 5. AVOID DUPLICATES: do NOT repeat or paraphrase any of these recently shown titles:
 ${avoidStr}
 6. Each of the ${count} ideas must use a DIFFERENT angle and format.
+
+LIVE TRENDING ON YOUTUBE (last 7 days, ordered by views) — use as REAL-TIME INSPIRATION for angles, topics, and what's actually hot. Do NOT copy these titles verbatim; reinterpret them for ${platStr}:
+${trendingBlock}
 
 VARIETY SEEDS (mix these angles): ${seedAngles}
 FORMATS to mix: ${seedFormats}
