@@ -31,6 +31,7 @@ interface CallArgs {
 const GEMINI_MODELS = ["gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-1.5-pro"];
 const OPENAI_MODELS = ["gpt-4o-mini", "gpt-4o"];
 const DEEPSEEK_MODELS = ["deepseek-chat"];
+const GROQ_MODELS = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"];
 const LOVABLE_MODELS = ["google/gemini-3-flash-preview", "google/gemini-2.5-flash", "openai/gpt-5-mini"];
 
 function pick<T>(arr: T[]): T {
@@ -130,6 +131,7 @@ export async function generateWithFallback({ messages, tool, temperature = 0.95 
   const GEMINI = Deno.env.get("GEMINI_API_KEY");
   const OPENAI = Deno.env.get("OPENAI_API_KEY");
   const DEEPSEEK = Deno.env.get("DEEPSEEK_API_KEY");
+  const GROQ = Deno.env.get("GROQ_API_KEY");
   const LOVABLE = Deno.env.get("LOVABLE_API_KEY");
 
   // Build provider chain in randomized order for variety, but skip those without keys.
@@ -147,6 +149,10 @@ export async function generateWithFallback({ messages, tool, temperature = 0.95 
   if (DEEPSEEK) providers.push({
     name: "deepseek",
     fn: () => callOpenAICompatible({ url: "https://api.deepseek.com/v1/chat/completions", apiKey: DEEPSEEK, model: pick(DEEPSEEK_MODELS), messages, tool, temperature }),
+  });
+  if (GROQ) providers.push({
+    name: "groq",
+    fn: () => callOpenAICompatible({ url: "https://api.groq.com/openai/v1/chat/completions", apiKey: GROQ, model: pick(GROQ_MODELS), messages, tool, temperature }),
   });
 
   // Randomize order of user-provided keys for variety
