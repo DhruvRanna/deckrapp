@@ -31,6 +31,7 @@ export interface ContentIdea {
   viralScore: number;
   color: string;
   scheduledDate?: string;
+  trending?: boolean;
 }
 
 export interface GeneratedScript {

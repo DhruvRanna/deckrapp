@@ -153,6 +153,7 @@ TRENDING FLAG: set "trending": true ONLY for ideas directly inspired by a title 
           competition: ["Low", "Medium", "High"][i % 3],
           viralScore: 80 + Math.floor(Math.random() * 18),
           thumbnailIdea: `Bold text overlay echoing "${reframed.split(" ").slice(0, 4).join(" ")}" with shocked-face reaction shot.`,
+          trending: true,
           color: CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)],
         };
       });
