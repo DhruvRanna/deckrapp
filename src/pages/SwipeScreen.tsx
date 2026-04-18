@@ -92,9 +92,6 @@ const SwipeScreen: React.FC = () => {
         setIdeas(prev => [...prev, ...data.ideas]);
       } else if (data?.fallback) {
         setIdeas(prev => prev.length < 5 ? [...prev, ...getFallbackIdeas()] : prev);
-        if (data.reason === "credits") {
-          toast.warning("AI credits low — showing template ideas. Add credits for fresh AI ideas.");
-        }
       }
     } catch {
       setIdeas(prev => prev.length < 3 ? [...prev, ...getFallbackIdeas()] : prev);
@@ -162,11 +159,7 @@ const SwipeScreen: React.FC = () => {
         captionIdea: data.captionIdea, createdAt: savedScript.created_at,
       });
       await refreshData();
-      if (data.fallback) {
-        toast.warning("AI credits low — used a smart template. You can edit it.");
-      } else {
-        toast.success("Script generated!");
-      }
+      toast.success("Script generated!");
     } catch (err: unknown) {
       const parsed = await parseAiError(err);
       toast.error(parsed.message);

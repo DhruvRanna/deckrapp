@@ -57,11 +57,7 @@ const ScriptsScreen: React.FC = () => {
         deliveryTip: data.deliveryTip, hashtags: data.hashtags, thumbnailIdea: data.thumbnailIdea,
         captionIdea: data.captionIdea, createdAt: saved.created_at,
       });
-      if (data.fallback) {
-        toast.warning("AI credits low — used a smart template. You can edit & customize it.");
-      } else {
-        toast.success("Script generated & saved!");
-      }
+      toast.success("Script generated & saved!");
     } catch (err: unknown) {
       const parsed = await parseAiError(err);
       toast.error(parsed.message);
