@@ -101,6 +101,7 @@ INSIGHT: explain WHY this format/angle works on this platform right now.`;
                   competition: { type: "string", enum: ["Low", "Medium", "High"] },
                   viralScore: { type: "number" },
                   thumbnailIdea: { type: "string" },
+                  trending: { type: "boolean", description: "True if directly inspired by a title in the LIVE TRENDING ON YOUTUBE block" },
                 },
                 required: ["platform", "title", "hook", "insight", "tags", "duration", "competition", "viralScore", "thumbnailIdea"],
                 additionalProperties: false,
