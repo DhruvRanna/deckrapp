@@ -159,11 +159,7 @@ const SwipeScreen: React.FC = () => {
         captionIdea: data.captionIdea, createdAt: savedScript.created_at,
       });
       await refreshData();
-      if (data.fallback) {
-        toast.warning("AI credits low — used a smart template. You can edit it.");
-      } else {
-        toast.success("Script generated!");
-      }
+      toast.success("Script generated!");
     } catch (err: unknown) {
       const parsed = await parseAiError(err);
       toast.error(parsed.message);
