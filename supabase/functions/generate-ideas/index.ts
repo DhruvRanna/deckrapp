@@ -125,13 +125,43 @@ INSIGHT: explain WHY this format/angle works on this platform right now.`;
     });
   } catch (e) {
     console.error("generate-ideas error:", e);
-    if (e instanceof AllProvidersFailedError) {
-      // Return 200 with fallback signal so the client can use templates without crashing.
-      return new Response(JSON.stringify({ fallback: true, reason: e.reason, error: e.message, ideas: [] }), {
-        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const reason = e instanceof AllProvidersFailedError ? e.reason : "generic";
+    // Smart fallback: build ideas from LIVE YouTube trending titles so users still get
+    // fresh, real-world relevant cards even when all AI providers fail.
+    try {
+      const { niches: nb = ["General"], platforms: pb = ["YouTube Shorts"], count: cb = 10 } = await req.clone().json().catch(() => ({}));
+      const platform = (pb[0] || "YouTube Shorts").toUpperCase();
+      const trending = await Promise.all(
+        nb.slice(0, 3).map(async (n: string) => ({ niche: n, titles: await getYouTubeTrendingTitles(n, 10) }))
+      );
+      const flat = trending.flatMap(t => t.titles.map(title => ({ niche: t.niche, title })));
+      const ANGLES = ["POV", "Top 5", "I Tried", "Why You're Wrong About", "The Truth About", "Stop Doing", "Secret to", "Hidden", "Beginner Guide:", "Pro Tips:"];
+      const ideas = aiVariety.shuffle(flat).slice(0, cb).map((t, i) => {
+        const angle = ANGLES[Math.floor(Math.random() * ANGLES.length)];
+        const reframed = `${angle} ${t.title.split("|")[0].split("-")[0].trim().slice(0, 60)}`;
+        return {
+          id: crypto.randomUUID(),
+          platform,
+          title: reframed,
+          hook: `Everyone's watching "${t.title.slice(0, 70)}" — here's what they missed.`,
+          insight: `Live trending on YouTube right now in ${t.niche}. Reframe with your unique angle for fast reach.`,
+          tags: [t.niche.toUpperCase().replace(/\s+/g, ""), "TRENDING NOW", "LIVE DATA"],
+          duration: ["30s", "60s", "90s"][i % 3],
+          competition: ["Low", "Medium", "High"][i % 3],
+          viralScore: 80 + Math.floor(Math.random() * 18),
+          thumbnailIdea: `Bold text overlay echoing "${reframed.split(" ").slice(0, 4).join(" ")}" with shocked-face reaction shot.`,
+          color: CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)],
+        };
       });
+      if (ideas.length > 0) {
+        return new Response(JSON.stringify({ ideas, fallback: true, source: "youtube-trending", reason }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    } catch (innerErr) {
+      console.warn("[generate-ideas] trending fallback also failed:", innerErr);
     }
-    return new Response(JSON.stringify({ fallback: true, reason: "generic", error: e instanceof Error ? e.message : "Unknown error", ideas: [] }), {
+    return new Response(JSON.stringify({ fallback: true, reason, error: e instanceof Error ? e.message : "Unknown error", ideas: [] }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

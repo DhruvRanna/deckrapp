@@ -67,14 +67,42 @@ const SwipeScreen: React.FC = () => {
 
   const getFallbackIdeas = useCallback((): ContentIdea[] => {
     const niche = selectedNiche || user?.niches[0] || "General";
-    const platform = user?.platforms[0] || "YOUTUBE SHORTS";
-    return [
-      { id: `f${Date.now()}1`, platform, title: `Top ${niche} Secrets Nobody Tells You`, hook: `Everyone in ${niche} is talking about this but nobody is doing it right.`, insight: "Contrarian take drives engagement", tags: ["QUICK TIP", "60S", "LOW COMPETITION"], duration: "60s", competition: "Low", viralScore: 91, color: "save" },
-      { id: `f${Date.now()}2`, platform, title: `${niche} Hack That Actually Works in 2026`, hook: `I spent 6 months testing every ${niche} strategy. Only ONE worked.`, insight: "Personal journey + single takeaway = high saves", tags: ["SHORT VIDEO", "30S"], duration: "30s", competition: "Low", viralScore: 88, color: "script" },
-      { id: `f${Date.now()}3`, platform, title: `Why 97% of People Fail at ${niche}`, hook: `97% of people make this mistake in ${niche}. Are you one of them?`, insight: "Stat-based hooks trigger curiosity gap", tags: ["TRENDING", "MEDIUM COMPETITION"], duration: "60s", competition: "Medium", viralScore: 85, color: "skip" },
-      { id: `f${Date.now()}4`, platform, title: `${niche} Beginner to Expert in 30 Days`, hook: `From zero to expert in ${niche}. Here's the exact roadmap.`, insight: "Transformation stories perform well", tags: ["TUTORIAL", "LOW COMPETITION"], duration: "10min", competition: "Low", viralScore: 93, color: "viral" },
-      { id: `f${Date.now()}5`, platform, title: `Stop Doing This in ${niche} Right Now!`, hook: `This common ${niche} advice is actually WRONG.`, insight: "Myth-busting content gets shares", tags: ["QUICK TIP", "30S"], duration: "30s", competition: "Low", viralScore: 90, color: "trend" },
+    const platform = (user?.platforms[0] || "YOUTUBE SHORTS").toUpperCase();
+    // Large variety pool — every call randomizes templates, hooks, durations and viral scores
+    // so users never see the same generic 5 cards twice.
+    const TEMPLATES: Array<(n: string) => { title: string; hook: string; insight: string; angle: string }> = [
+      (n) => ({ title: `${n} Mistake That's Killing Your Reach`, hook: `Stop scrolling — this one ${n} habit is destroying 90% of accounts.`, insight: "Loss-aversion hooks outperform positive framings", angle: "MYTH BUST" }),
+      (n) => ({ title: `I Tried ${n} For 30 Days — Here's What Happened`, hook: `Day 1 vs Day 30: the ${n} transformation nobody expected.`, insight: "Time-bound experiments build retention", angle: "EXPERIMENT" }),
+      (n) => ({ title: `${n} in 60 Seconds (No Fluff)`, hook: `Everything you need to know about ${n} — fast.`, insight: "Speed-promise hooks drive completion", angle: "FAST GUIDE" }),
+      (n) => ({ title: `Hot Take: ${n} Is Changing Forever`, hook: `Unpopular opinion — what everyone teaches about ${n} is outdated.`, insight: "Controversial takes spark comments", angle: "HOT TAKE" }),
+      (n) => ({ title: `POV: You Just Discovered ${n}`, hook: `What I wish someone told me when I started ${n}.`, insight: "POV format wins on TikTok/Reels", angle: "POV" }),
+      (n) => ({ title: `3 ${n} Tools You're Not Using`, hook: `These free ${n} tools will save you hours every week.`, insight: "Tool listicles get high saves", angle: "LISTICLE" }),
+      (n) => ({ title: `Why Your ${n} Strategy Isn't Working`, hook: `If your ${n} isn't growing, it's probably this one thing.`, insight: "Diagnosis hooks trigger self-reflection", angle: "DIAGNOSIS" }),
+      (n) => ({ title: `Behind the Scenes: My ${n} Setup`, hook: `Take a peek inside my real ${n} workflow.`, insight: "BTS content humanizes creators", angle: "BTS" }),
+      (n) => ({ title: `${n} Trends to Watch This Month`, hook: `These ${n} trends are about to blow up — get in early.`, insight: "Predictive content earns shares", angle: "TREND FORECAST" }),
+      (n) => ({ title: `Reacting to Bad ${n} Advice Online`, hook: `I can't believe people are saying THIS about ${n}.`, insight: "Reaction format leverages controversy", angle: "REACTION" }),
+      (n) => ({ title: `The ${n} Question Nobody Asks`, hook: `Real talk — why is no one talking about this ${n} issue?`, insight: "Curiosity-gap questions stop the scroll", angle: "CURIOSITY" }),
+      (n) => ({ title: `Day in the Life: ${n} Creator`, hook: `What a productive ${n} day actually looks like.`, insight: "DITL content builds parasocial trust", angle: "DITL" }),
     ];
+    const COLORS = ["save", "script", "skip", "viral", "trend"];
+    const DURATIONS = ["15s", "30s", "60s", "90s"];
+    const shuffled = [...TEMPLATES].sort(() => Math.random() - 0.5).slice(0, 6);
+    const stamp = Date.now();
+    return shuffled.map((tpl, i) => {
+      const t = tpl(niche);
+      return {
+        id: `f${stamp}${i}${Math.random().toString(36).slice(2, 6)}`,
+        platform,
+        title: t.title,
+        hook: t.hook,
+        insight: t.insight,
+        tags: [t.angle, niche.toUpperCase(), DURATIONS[i % DURATIONS.length].toUpperCase()],
+        duration: DURATIONS[i % DURATIONS.length],
+        competition: (["Low", "Medium", "High"] as const)[i % 3],
+        viralScore: 78 + Math.floor(Math.random() * 20),
+        color: COLORS[i % COLORS.length],
+      };
+    });
   }, [selectedNiche, user?.niches, user?.platforms]);
 
   const loadIdeas = useCallback(async () => {
