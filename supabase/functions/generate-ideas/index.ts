@@ -74,7 +74,8 @@ PLATFORM TITLE LENGTH:
 - Instagram Reels: 5-8 words, aesthetic
 
 HOOK QUALITY: scroll-stopping, curiosity gap, shocking stat, bold claim, or personal story.
-INSIGHT: explain WHY this format/angle works on this platform right now.`;
+INSIGHT: explain WHY this format/angle works on this platform right now.
+TRENDING FLAG: set "trending": true ONLY for ideas directly inspired by a title in the LIVE TRENDING ON YOUTUBE block above. Set false (or omit) otherwise.`;
 
     const ideas = await generateWithFallback({
       messages: [
@@ -115,8 +116,9 @@ INSIGHT: explain WHY this format/angle works on this platform right now.`;
       temperature: 1.05,
     });
 
-    const list = (ideas?.ideas || []).map((idea: any, i: number) => ({
+    const list = (ideas?.ideas || []).map((idea: any) => ({
       ...idea,
+      trending: !!idea.trending,
       id: crypto.randomUUID(),
       color: CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)],
     }));
