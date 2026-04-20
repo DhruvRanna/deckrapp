@@ -116,6 +116,10 @@
 .theme-sky     { --t-bg: 200 90% 94%; --t-surface: 200 80% 88%; --t-primary: 205 75% 50%; --t-text: 210 55% 25%; --t-muted: 205 25% 48%; }
 .theme-butter  { --t-bg: 48 95% 92%;  --t-surface: 48 85% 85%;  --t-primary: 38 90% 50%;  --t-text: 35 55% 25%;  --t-muted: 40 30% 45%; }
 .theme-rose    { --t-bg: 340 80% 95%; --t-surface: 340 70% 90%; --t-primary: 340 75% 55%; --t-text: 340 50% 28%; --t-muted: 340 20% 50%; }
+.theme-teal    { --t-bg: 175 65% 92%; --t-surface: 175 55% 85%; --t-primary: 175 70% 38%; --t-text: 175 60% 20%; --t-muted: 175 25% 42%; }
+.theme-coral   { --t-bg: 8 85% 93%;   --t-surface: 8 80% 87%;   --t-primary: 8 80% 58%;   --t-text: 8 55% 28%;   --t-muted: 8 25% 48%; }
+.theme-indigo  { --t-bg: 230 75% 94%; --t-surface: 230 65% 88%; --t-primary: 230 70% 55%; --t-text: 230 50% 28%; --t-muted: 230 22% 48%; }
+.theme-lime    { --t-bg: 80 70% 92%;  --t-surface: 80 60% 85%;  --t-primary: 88 65% 42%;  --t-text: 88 55% 22%;  --t-muted: 80 25% 42%; }
 
 .swipe-card { background: hsl(var(--t-bg)); color: hsl(var(--t-text)); }
 .swipe-card .t-surface { background: hsl(var(--t-surface) / 0.55); }
