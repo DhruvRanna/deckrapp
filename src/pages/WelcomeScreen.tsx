@@ -110,7 +110,7 @@ const WelcomeScreen: React.FC = () => {
           return (
             <div
               key={i}
-              className="absolute inset-0 rounded-2xl p-6"
+              className="absolute left-0 right-0 top-0 rounded-2xl p-6"
               style={{
                 backgroundColor: c.bg,
                 transform: `translateY(${translateY}px) scale(${scale}) rotate(${rotate}deg)`,
