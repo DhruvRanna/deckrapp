@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "@/context/AppContext";
-import { ChevronRight, Bell, Calendar, Tag, CreditCard, HelpCircle, Info, Mail, FileText, Shield, LogOut, Lock, X, MonitorSmartphone } from "lucide-react";
+import { ChevronRight, Bell, Calendar, Tag, CreditCard, HelpCircle, Info, Mail, FileText, Shield, LogOut, Lock, X, MonitorSmartphone, KeyRound, Trash2, AtSign } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const NICHES = ["Finance", "Fitness", "Tech", "Fashion", "Food", "Travel", "Motivation", "Gaming", "Beauty", "Business", "Parenting", "Education", "Comedy", "Lifestyle", "Crypto", "Health"];
 const FREQUENCIES = [
@@ -13,12 +15,16 @@ const FREQUENCIES = [
 ];
 
 const ProfileScreen: React.FC = () => {
-  const { user, logout, updateNiches, updatePostingFrequency, updateNotifications } = useApp();
+  const { user, authUser, logout, updateNiches, updatePostingFrequency, updateNotifications } = useApp();
   const navigate = useNavigate();
   const [showNicheModal, setShowNicheModal] = useState(false);
   const [showFreqModal, setShowFreqModal] = useState(false);
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [pwLoading, setPwLoading] = useState(false);
 
   if (!user) return null;
 
@@ -36,6 +42,41 @@ const ProfileScreen: React.FC = () => {
     navigate("/");
   };
 
+  const handleChangePassword = async () => {
+    if (newPassword.length < 6) { toast.error("Password must be at least 6 characters"); return; }
+    setPwLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setPwLoading(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Password updated");
+    setNewPassword("");
+    setShowAccountModal(false);
+  };
+
+  const handleForgotPassword = async () => {
+    if (!user.email) return;
+    const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) { toast.error(error.message); return; }
+    toast.success("Reset link sent to your email");
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!authUser) return;
+    try {
+      // Delete profile + cascade saved_ideas/scripts via FK if configured; otherwise best-effort
+      await supabase.from("scripts").delete().eq("user_id", authUser.id);
+      await supabase.from("saved_ideas").delete().eq("user_id", authUser.id);
+      await supabase.from("profiles").delete().eq("user_id", authUser.id);
+      await supabase.auth.signOut();
+      toast.success("Account deleted");
+      navigate("/");
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to delete account");
+    }
+  };
+
   return (
     <div className="flex flex-col bg-background overflow-hidden" style={{ height: "100dvh" }}>
       <div className="flex-1 overflow-y-auto pb-4">
@@ -44,7 +85,6 @@ const ProfileScreen: React.FC = () => {
             {user.name[0]?.toUpperCase()}
           </div>
           <h2 className="mt-3 text-lg font-bold">{user.name}</h2>
-          <p className="text-sm text-muted-foreground">{user.email}</p>
           <span className={`mt-1 rounded-full px-3 py-0.5 text-[10px] font-semibold ${planBadge}`}>{user.plan.name}</span>
         </div>
 
@@ -107,6 +147,15 @@ const ProfileScreen: React.FC = () => {
             <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
           </button>
 
+          <button onClick={() => setShowAccountModal(true)} className="flex w-full items-center gap-3 border-t border-border px-4 py-3.5">
+            <AtSign className="h-5 w-5 text-muted-foreground shrink-0" />
+            <div className="flex-1 text-left min-w-0">
+              <p className="text-sm font-medium">Account</p>
+              <p className="text-[10px] text-muted-foreground truncate">{user.email}</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+          </button>
+
           {[
             { icon: CreditCard, title: "Manage Subscription", sub: `${user.plan.name} Plan`, path: "/plans" },
             { icon: HelpCircle, title: "Help & FAQ", sub: "Get answers fast", path: "/help" },
@@ -146,6 +195,73 @@ const ProfileScreen: React.FC = () => {
               </button>
               <button onClick={handleLogout} className="flex-1 rounded-xl bg-skip py-3 text-sm font-semibold text-background">
                 Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Account Modal */}
+      {showAccountModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 px-4" onClick={() => setShowAccountModal(false)}>
+          <div className="w-full max-w-sm rounded-2xl bg-background p-6 shadow-xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold">Account</h3>
+              <button onClick={() => setShowAccountModal(false)}><X className="h-5 w-5 text-muted-foreground" /></button>
+            </div>
+
+            <div className="mt-4 rounded-xl bg-muted px-3 py-2.5">
+              <p className="text-[10px] font-semibold tracking-wider text-muted-foreground">EMAIL</p>
+              <p className="mt-0.5 text-sm font-medium break-all">{user.email}</p>
+            </div>
+
+            <div className="mt-4">
+              <p className="text-[10px] font-semibold tracking-wider text-muted-foreground">CHANGE PASSWORD</p>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                placeholder="New password (min 6 chars)"
+                className="mt-1.5 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-foreground"
+              />
+              <button
+                onClick={handleChangePassword}
+                disabled={pwLoading}
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-foreground py-2.5 text-sm font-semibold text-background disabled:opacity-60"
+              >
+                <Lock className="h-4 w-4" /> {pwLoading ? "Updating..." : "Update Password"}
+              </button>
+            </div>
+
+            <button
+              onClick={handleForgotPassword}
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-border py-2.5 text-sm font-semibold"
+            >
+              <KeyRound className="h-4 w-4" /> Send Password Reset Email
+            </button>
+
+            <button
+              onClick={() => { setShowAccountModal(false); setShowDeleteConfirm(true); }}
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-skip/30 bg-skip/10 py-2.5 text-sm font-semibold text-skip"
+            >
+              <Trash2 className="h-4 w-4" /> Delete Account
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirm */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 px-4" onClick={() => setShowDeleteConfirm(false)}>
+          <div className="w-full max-w-sm rounded-2xl bg-background p-6 shadow-xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-center">Delete Account?</h3>
+            <p className="mt-2 text-sm text-muted-foreground text-center">This permanently removes your data, saved ideas and scripts. This cannot be undone.</p>
+            <div className="mt-6 flex gap-3">
+              <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 rounded-xl border border-border py-3 text-sm font-semibold">
+                Cancel
+              </button>
+              <button onClick={handleDeleteAccount} className="flex-1 rounded-xl bg-skip py-3 text-sm font-semibold text-background">
+                Delete
               </button>
             </div>
           </div>

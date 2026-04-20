@@ -92,7 +92,7 @@ const WelcomeScreen: React.FC = () => {
       </p>
 
       {/* Card stack */}
-      <div className="relative mt-10 h-[340px] w-full max-w-sm">
+      <div className="relative mt-10 w-full max-w-sm" style={{ height: "auto", minHeight: 280 }}>
         {CARDS.map((c, i) => {
           const offset = (i - active + CARDS.length) % CARDS.length;
           // Show top 3 in stack; rest hidden
@@ -110,7 +110,7 @@ const WelcomeScreen: React.FC = () => {
           return (
             <div
               key={i}
-              className="absolute inset-0 rounded-2xl p-6"
+              className="absolute left-0 right-0 top-0 rounded-2xl p-6"
               style={{
                 backgroundColor: c.bg,
                 transform: `translateY(${translateY}px) scale(${scale}) rotate(${rotate}deg)`,
@@ -135,10 +135,10 @@ const WelcomeScreen: React.FC = () => {
                   ⚡ {c.score}
                 </span>
               </div>
-              <h2 className="mt-4 text-base font-bold italic leading-snug text-foreground line-clamp-3">
+              <h2 className="mt-4 text-base font-bold italic leading-snug text-foreground">
                 {c.title}
               </h2>
-              <p className="mt-2 text-xs italic text-muted-foreground line-clamp-2">{c.hook}</p>
+              <p className="mt-2 text-xs italic text-muted-foreground">{c.hook}</p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {c.tags.map(t => (
                   <span
