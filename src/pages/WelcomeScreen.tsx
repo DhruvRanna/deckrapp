@@ -135,10 +135,10 @@ const WelcomeScreen: React.FC = () => {
                   ⚡ {c.score}
                 </span>
               </div>
-              <h2 className="mt-4 text-base font-bold italic leading-snug text-foreground line-clamp-3">
+              <h2 className="mt-4 text-base font-bold italic leading-snug text-foreground">
                 {c.title}
               </h2>
-              <p className="mt-2 text-xs italic text-muted-foreground line-clamp-2">{c.hook}</p>
+              <p className="mt-2 text-xs italic text-muted-foreground">{c.hook}</p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {c.tags.map(t => (
                   <span
