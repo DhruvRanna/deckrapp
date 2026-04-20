@@ -147,6 +147,15 @@ const ProfileScreen: React.FC = () => {
             <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
           </button>
 
+          <button onClick={() => setShowAccountModal(true)} className="flex w-full items-center gap-3 border-t border-border px-4 py-3.5">
+            <AtSign className="h-5 w-5 text-muted-foreground shrink-0" />
+            <div className="flex-1 text-left min-w-0">
+              <p className="text-sm font-medium">Account</p>
+              <p className="text-[10px] text-muted-foreground truncate">{user.email}</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+          </button>
+
           {[
             { icon: CreditCard, title: "Manage Subscription", sub: `${user.plan.name} Plan`, path: "/plans" },
             { icon: HelpCircle, title: "Help & FAQ", sub: "Get answers fast", path: "/help" },
