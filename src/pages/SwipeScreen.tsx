@@ -16,7 +16,7 @@ const THEME_BY_COLOR: Record<string, string> = {
   trend: "theme-sky",
   viral: "theme-butter",
 };
-const THEME_CYCLE = ["theme-mint", "theme-lavender", "theme-peach", "theme-sky", "theme-butter", "theme-rose"];
+const THEME_CYCLE = ["theme-mint", "theme-lavender", "theme-peach", "theme-sky", "theme-butter", "theme-rose", "theme-teal", "theme-coral", "theme-indigo", "theme-lime"];
 const themeFor = (idea: ContentIdea, idx: number) =>
   THEME_BY_COLOR[idea.color] || THEME_CYCLE[idx % THEME_CYCLE.length];
 

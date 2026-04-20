@@ -18,15 +18,17 @@ export const ScriptsIntroScreen: React.FC = () => {
   const [revealed, setRevealed] = useState(0);
 
   useEffect(() => {
+    // Start at 0, then reveal one by one, then reset
     const id = setInterval(() => {
       setRevealed(r => (r >= SCRIPT_LINES.length ? 0 : r + 1));
-    }, 1200);
+    }, 1000);
     return () => clearInterval(id);
   }, []);
 
   return (
     <div
-      className="flex min-h-screen flex-col bg-background px-6 pt-10 pb-8"
+      className="flex flex-col bg-background px-6 pt-10 pb-8 overflow-hidden"
+      style={{ height: "100dvh" }}
       onClick={() => navigate("/onboarding/calendar-intro")}
     >
       <div className="flex items-center justify-center gap-2">
@@ -36,7 +38,7 @@ export const ScriptsIntroScreen: React.FC = () => {
       </div>
       <p className="mt-2 text-center text-xs tracking-widest text-muted-foreground">2 OF 3</p>
 
-      <div className="mt-10 flex flex-col items-center text-center">
+      <div className="mt-8 flex flex-col items-center text-center">
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-script-light animate-scale-in">
           <Sparkles className="h-7 w-7 text-script" />
         </div>
@@ -49,7 +51,7 @@ export const ScriptsIntroScreen: React.FC = () => {
       </div>
 
       {/* Animated script preview */}
-      <div className="mt-8 flex-1">
+      <div className="mt-6 flex-1 min-h-0">
         <div className="mx-auto w-full max-w-sm rounded-2xl border border-border bg-card p-5 shadow-card-soft">
           <div className="flex items-center justify-between">
             <span className="rounded-full bg-script-light px-3 py-1 text-[10px] font-semibold tracking-wider text-script">
@@ -65,11 +67,11 @@ export const ScriptsIntroScreen: React.FC = () => {
               return (
                 <div
                   key={i}
-                  className="rounded-xl p-3 transition-all duration-500"
+                  className="rounded-xl p-3 transition-all duration-500 ease-out"
                   style={{
                     backgroundColor: line.bg,
                     opacity: visible ? 1 : 0,
-                    transform: visible ? "translateY(0)" : "translateY(8px)",
+                    transform: visible ? "translateY(0) scale(1)" : "translateY(12px) scale(0.96)",
                   }}
                 >
                   <div className="flex items-center gap-2">
@@ -104,6 +106,19 @@ export const ScriptsIntroScreen: React.FC = () => {
 const CAL_DAYS = Array.from({ length: 21 }, (_, i) => i);
 const FILLED_INDEXES = [1, 2, 4, 7, 9, 12, 14, 16, 18];
 const COLORS = ["bg-save", "bg-script", "bg-trend", "bg-viral"];
+const COLOR_HEX = ["hsl(145 65% 42%)", "hsl(262 60% 58%)", "hsl(200 75% 50%)", "hsl(38 90% 50%)"];
+
+const PREVIEW_IDEAS = [
+  { title: "5 Morning Habits That Changed My Life", platform: "TikTok", time: "9:00 AM", tag: "Lifestyle" },
+  { title: "I Tested 10 AI Tools — Only 2 Worked", platform: "YouTube Shorts", time: "12:00 PM", tag: "Tech" },
+  { title: "POV: You Just Found Your Dream Niche", platform: "Reels", time: "6:00 PM", tag: "Story" },
+  { title: "The 30-Day Posting Cadence That Wins", platform: "YouTube", time: "10:00 AM", tag: "Strategy" },
+  { title: "Stop Posting Daily — Do This Instead", platform: "TikTok", time: "2:00 PM", tag: "Hot Take" },
+  { title: "3 Hooks That Got Me 1M Views", platform: "Reels", time: "8:00 PM", tag: "Tutorial" },
+  { title: "The Cheat Code To Going Viral in 2026", platform: "YouTube Shorts", time: "11:00 AM", tag: "Growth" },
+  { title: "Why Your Reach Just Dropped (Fix It)", platform: "TikTok", time: "5:00 PM", tag: "Algorithm" },
+  { title: "POV: 30 Days of Content in 1 Day", platform: "Reels", time: "7:00 PM", tag: "Workflow" },
+];
 
 export const CalendarIntroScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -112,13 +127,20 @@ export const CalendarIntroScreen: React.FC = () => {
   useEffect(() => {
     const id = setInterval(() => {
       setStep(s => (s >= FILLED_INDEXES.length ? 0 : s + 1));
-    }, 350);
+    }, 600);
     return () => clearInterval(id);
   }, []);
 
+  // Selected = the most recently filled date
+  const selectedIdx = Math.max(0, Math.min(step - 1, FILLED_INDEXES.length - 1));
+  const selectedDay = FILLED_INDEXES[selectedIdx];
+  const selectedColor = COLOR_HEX[selectedIdx % COLOR_HEX.length];
+  const selectedPreview = PREVIEW_IDEAS[selectedIdx % PREVIEW_IDEAS.length];
+
   return (
     <div
-      className="flex min-h-screen flex-col bg-background px-6 pt-10 pb-8"
+      className="flex flex-col bg-background px-6 pt-10 pb-8 overflow-hidden"
+      style={{ height: "100dvh" }}
       onClick={() => navigate("/auth")}
     >
       <div className="flex items-center justify-center gap-2">
@@ -128,11 +150,11 @@ export const CalendarIntroScreen: React.FC = () => {
       </div>
       <p className="mt-2 text-center text-xs tracking-widest text-muted-foreground">3 OF 3</p>
 
-      <div className="mt-10 flex flex-col items-center text-center">
+      <div className="mt-6 flex flex-col items-center text-center">
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-save-light animate-scale-in">
           <CalendarIcon className="h-7 w-7 text-save" />
         </div>
-        <h1 className="mt-5 text-3xl font-extrabold italic leading-tight">
+        <h1 className="mt-4 text-3xl font-extrabold italic leading-tight">
           Plan a month, in minutes.
         </h1>
         <p className="mt-2 max-w-xs text-sm text-muted-foreground">
@@ -141,8 +163,8 @@ export const CalendarIntroScreen: React.FC = () => {
       </div>
 
       {/* Animated mini-calendar */}
-      <div className="mt-8 flex-1">
-        <div className="mx-auto w-full max-w-sm rounded-2xl border border-border bg-card p-5 shadow-card-soft">
+      <div className="mt-5 flex-1 min-h-0">
+        <div className="mx-auto w-full max-w-sm rounded-2xl border border-border bg-card p-4 shadow-card-soft">
           <div className="flex items-center justify-between">
             <span className="text-sm font-bold">This Month</span>
             <span className="text-[10px] text-muted-foreground">{FILLED_INDEXES.length} ideas planned</span>
@@ -155,15 +177,16 @@ export const CalendarIntroScreen: React.FC = () => {
             {CAL_DAYS.map((d) => {
               const filledIdx = FILLED_INDEXES.indexOf(d);
               const isFilled = filledIdx !== -1 && filledIdx < step;
+              const isSelected = isFilled && d === selectedDay;
               const color = filledIdx !== -1 ? COLORS[filledIdx % COLORS.length] : "";
               return (
                 <div
                   key={d}
                   className={`relative flex aspect-square items-center justify-center rounded-lg text-[10px] font-semibold transition-all duration-500 ${
-                    isFilled ? `${color} text-background scale-100` : "bg-muted text-muted-foreground scale-95"
-                  }`}
+                    isFilled ? `${color} text-background` : "bg-muted text-muted-foreground"
+                  } ${isSelected ? "ring-2 ring-foreground ring-offset-1 ring-offset-card" : ""}`}
                   style={{
-                    transform: isFilled ? "scale(1)" : "scale(0.92)",
+                    transform: isFilled ? (isSelected ? "scale(1.08)" : "scale(1)") : "scale(0.92)",
                   }}
                 >
                   {d + 1}
@@ -175,19 +198,42 @@ export const CalendarIntroScreen: React.FC = () => {
             })}
           </div>
 
-          <div className="mt-4 flex items-center justify-between rounded-xl bg-muted/60 px-3 py-2.5">
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-viral animate-pulse" />
-              <span className="text-[11px] font-semibold">Today's Post</span>
+          {/* Preview content for the selected/animated date */}
+          <div
+            key={selectedIdx}
+            className="mt-3 rounded-xl border border-border p-3 animate-fade-in"
+            style={{ backgroundColor: `${selectedColor.replace("hsl(", "hsl(").replace(")", " / 0.08)")}` }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span
+                  className="flex h-6 w-6 items-center justify-center rounded-md text-[10px] font-bold text-background"
+                  style={{ backgroundColor: selectedColor }}
+                >
+                  {selectedDay + 1}
+                </span>
+                <span className="text-[10px] font-semibold tracking-wider" style={{ color: selectedColor }}>
+                  {selectedPreview.platform.toUpperCase()}
+                </span>
+              </div>
+              <span className="text-[10px] text-muted-foreground">{selectedPreview.time}</span>
             </div>
-            <span className="text-[10px] text-muted-foreground">2:00 PM · TikTok</span>
+            <p className="mt-2 text-sm font-bold leading-snug text-foreground">
+              {selectedPreview.title}
+            </p>
+            <span
+              className="mt-2 inline-block rounded-full px-2 py-0.5 text-[9px] font-semibold"
+              style={{ backgroundColor: `${selectedColor.replace(")", " / 0.15)")}`, color: selectedColor }}
+            >
+              {selectedPreview.tag}
+            </span>
           </div>
         </div>
       </div>
 
       <button
         onClick={(e) => { e.stopPropagation(); navigate("/auth"); }}
-        className="mt-6 w-full rounded-2xl bg-foreground py-4 text-sm font-semibold text-background"
+        className="mt-4 w-full rounded-2xl bg-foreground py-4 text-sm font-semibold text-background"
       >
         Get Started →
       </button>
