@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "@/context/AppContext";
-import { ChevronRight, Bell, Calendar, Tag, CreditCard, HelpCircle, Info, Mail, FileText, Shield, LogOut, Lock, X, MonitorSmartphone } from "lucide-react";
+import { ChevronRight, Bell, Calendar, Tag, CreditCard, HelpCircle, Info, Mail, FileText, Shield, LogOut, Lock, X, MonitorSmartphone, KeyRound, Trash2, AtSign } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const NICHES = ["Finance", "Fitness", "Tech", "Fashion", "Food", "Travel", "Motivation", "Gaming", "Beauty", "Business", "Parenting", "Education", "Comedy", "Lifestyle", "Crypto", "Health"];
 const FREQUENCIES = [
