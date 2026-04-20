@@ -18,15 +18,17 @@ export const ScriptsIntroScreen: React.FC = () => {
   const [revealed, setRevealed] = useState(0);
 
   useEffect(() => {
+    // Start at 0, then reveal one by one, then reset
     const id = setInterval(() => {
       setRevealed(r => (r >= SCRIPT_LINES.length ? 0 : r + 1));
-    }, 1200);
+    }, 1000);
     return () => clearInterval(id);
   }, []);
 
   return (
     <div
-      className="flex min-h-screen flex-col bg-background px-6 pt-10 pb-8"
+      className="flex flex-col bg-background px-6 pt-10 pb-8 overflow-hidden"
+      style={{ height: "100dvh" }}
       onClick={() => navigate("/onboarding/calendar-intro")}
     >
       <div className="flex items-center justify-center gap-2">
@@ -36,7 +38,7 @@ export const ScriptsIntroScreen: React.FC = () => {
       </div>
       <p className="mt-2 text-center text-xs tracking-widest text-muted-foreground">2 OF 3</p>
 
-      <div className="mt-10 flex flex-col items-center text-center">
+      <div className="mt-8 flex flex-col items-center text-center">
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-script-light animate-scale-in">
           <Sparkles className="h-7 w-7 text-script" />
         </div>
@@ -49,7 +51,7 @@ export const ScriptsIntroScreen: React.FC = () => {
       </div>
 
       {/* Animated script preview */}
-      <div className="mt-8 flex-1">
+      <div className="mt-6 flex-1 min-h-0">
         <div className="mx-auto w-full max-w-sm rounded-2xl border border-border bg-card p-5 shadow-card-soft">
           <div className="flex items-center justify-between">
             <span className="rounded-full bg-script-light px-3 py-1 text-[10px] font-semibold tracking-wider text-script">
@@ -65,11 +67,11 @@ export const ScriptsIntroScreen: React.FC = () => {
               return (
                 <div
                   key={i}
-                  className="rounded-xl p-3 transition-all duration-500"
+                  className="rounded-xl p-3 transition-all duration-500 ease-out"
                   style={{
                     backgroundColor: line.bg,
                     opacity: visible ? 1 : 0,
-                    transform: visible ? "translateY(0)" : "translateY(8px)",
+                    transform: visible ? "translateY(0) scale(1)" : "translateY(12px) scale(0.96)",
                   }}
                 >
                   <div className="flex items-center gap-2">
