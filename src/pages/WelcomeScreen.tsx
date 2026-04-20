@@ -92,7 +92,7 @@ const WelcomeScreen: React.FC = () => {
       </p>
 
       {/* Card stack */}
-      <div className="relative mt-10 h-[340px] w-full max-w-sm">
+      <div className="relative mt-10 w-full max-w-sm" style={{ height: "auto", minHeight: 280 }}>
         {CARDS.map((c, i) => {
           const offset = (i - active + CARDS.length) % CARDS.length;
           // Show top 3 in stack; rest hidden
