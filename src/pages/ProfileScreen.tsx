@@ -15,12 +15,16 @@ const FREQUENCIES = [
 ];
 
 const ProfileScreen: React.FC = () => {
-  const { user, logout, updateNiches, updatePostingFrequency, updateNotifications } = useApp();
+  const { user, authUser, logout, updateNiches, updatePostingFrequency, updateNotifications } = useApp();
   const navigate = useNavigate();
   const [showNicheModal, setShowNicheModal] = useState(false);
   const [showFreqModal, setShowFreqModal] = useState(false);
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [pwLoading, setPwLoading] = useState(false);
 
   if (!user) return null;
 
