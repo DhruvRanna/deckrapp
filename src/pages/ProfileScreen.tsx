@@ -42,6 +42,41 @@ const ProfileScreen: React.FC = () => {
     navigate("/");
   };
 
+  const handleChangePassword = async () => {
+    if (newPassword.length < 6) { toast.error("Password must be at least 6 characters"); return; }
+    setPwLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setPwLoading(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Password updated");
+    setNewPassword("");
+    setShowAccountModal(false);
+  };
+
+  const handleForgotPassword = async () => {
+    if (!user.email) return;
+    const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) { toast.error(error.message); return; }
+    toast.success("Reset link sent to your email");
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!authUser) return;
+    try {
+      // Delete profile + cascade saved_ideas/scripts via FK if configured; otherwise best-effort
+      await supabase.from("scripts").delete().eq("user_id", authUser.id);
+      await supabase.from("saved_ideas").delete().eq("user_id", authUser.id);
+      await supabase.from("profiles").delete().eq("user_id", authUser.id);
+      await supabase.auth.signOut();
+      toast.success("Account deleted");
+      navigate("/");
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to delete account");
+    }
+  };
+
   return (
     <div className="flex flex-col bg-background overflow-hidden" style={{ height: "100dvh" }}>
       <div className="flex-1 overflow-y-auto pb-4">
@@ -50,7 +85,6 @@ const ProfileScreen: React.FC = () => {
             {user.name[0]?.toUpperCase()}
           </div>
           <h2 className="mt-3 text-lg font-bold">{user.name}</h2>
-          <p className="text-sm text-muted-foreground">{user.email}</p>
           <span className={`mt-1 rounded-full px-3 py-0.5 text-[10px] font-semibold ${planBadge}`}>{user.plan.name}</span>
         </div>
 
