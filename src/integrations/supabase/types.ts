@@ -20,6 +20,7 @@ export type Database = {
           display_name: string
           email: string
           id: string
+          last_streak_date: string | null
           last_swipe_date: string | null
           niches: string[]
           notifications_enabled: boolean
@@ -38,6 +39,7 @@ export type Database = {
           display_name?: string
           email?: string
           id?: string
+          last_streak_date?: string | null
           last_swipe_date?: string | null
           niches?: string[]
           notifications_enabled?: boolean
@@ -56,6 +58,7 @@ export type Database = {
           display_name?: string
           email?: string
           id?: string
+          last_streak_date?: string | null
           last_swipe_date?: string | null
           niches?: string[]
           notifications_enabled?: boolean

@@ -7,6 +7,7 @@ import OfflineScreen from "@/components/OfflineScreen";
 import SplashScreen from "@/pages/SplashScreen";
 import WelcomeScreen from "@/pages/WelcomeScreen";
 import TutorialScreen from "@/pages/TutorialScreen";
+import { ScriptsIntroScreen, CalendarIntroScreen } from "@/pages/IntroScreens";
 import AuthScreen from "@/pages/AuthScreen";
 import ResetPasswordScreen from "@/pages/ResetPasswordScreen";
 import OnboardingScreen from "@/pages/OnboardingScreen";
@@ -55,6 +56,8 @@ const App = () => (
             <Routes>
               <Route path="/" element={<SplashScreen />} />
               <Route path="/welcome" element={<WelcomeScreen />} />
+              <Route path="/onboarding/scripts-intro" element={<ScriptsIntroScreen />} />
+              <Route path="/onboarding/calendar-intro" element={<CalendarIntroScreen />} />
               <Route path="/tutorial" element={<TutorialScreen />} />
               <Route path="/auth" element={<AuthScreen />} />
               <Route path="/reset-password" element={<ResetPasswordScreen />} />
