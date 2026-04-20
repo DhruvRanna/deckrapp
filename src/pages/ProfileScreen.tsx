@@ -201,6 +201,73 @@ const ProfileScreen: React.FC = () => {
         </div>
       )}
 
+      {/* Account Modal */}
+      {showAccountModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 px-4" onClick={() => setShowAccountModal(false)}>
+          <div className="w-full max-w-sm rounded-2xl bg-background p-6 shadow-xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold">Account</h3>
+              <button onClick={() => setShowAccountModal(false)}><X className="h-5 w-5 text-muted-foreground" /></button>
+            </div>
+
+            <div className="mt-4 rounded-xl bg-muted px-3 py-2.5">
+              <p className="text-[10px] font-semibold tracking-wider text-muted-foreground">EMAIL</p>
+              <p className="mt-0.5 text-sm font-medium break-all">{user.email}</p>
+            </div>
+
+            <div className="mt-4">
+              <p className="text-[10px] font-semibold tracking-wider text-muted-foreground">CHANGE PASSWORD</p>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                placeholder="New password (min 6 chars)"
+                className="mt-1.5 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-foreground"
+              />
+              <button
+                onClick={handleChangePassword}
+                disabled={pwLoading}
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-foreground py-2.5 text-sm font-semibold text-background disabled:opacity-60"
+              >
+                <Lock className="h-4 w-4" /> {pwLoading ? "Updating..." : "Update Password"}
+              </button>
+            </div>
+
+            <button
+              onClick={handleForgotPassword}
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-border py-2.5 text-sm font-semibold"
+            >
+              <KeyRound className="h-4 w-4" /> Send Password Reset Email
+            </button>
+
+            <button
+              onClick={() => { setShowAccountModal(false); setShowDeleteConfirm(true); }}
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-skip/30 bg-skip/10 py-2.5 text-sm font-semibold text-skip"
+            >
+              <Trash2 className="h-4 w-4" /> Delete Account
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirm */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 px-4" onClick={() => setShowDeleteConfirm(false)}>
+          <div className="w-full max-w-sm rounded-2xl bg-background p-6 shadow-xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-center">Delete Account?</h3>
+            <p className="mt-2 text-sm text-muted-foreground text-center">This permanently removes your data, saved ideas and scripts. This cannot be undone.</p>
+            <div className="mt-6 flex gap-3">
+              <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 rounded-xl border border-border py-3 text-sm font-semibold">
+                Cancel
+              </button>
+              <button onClick={handleDeleteAccount} className="flex-1 rounded-xl bg-skip py-3 text-sm font-semibold text-background">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <BottomNav />
     </div>
   );
