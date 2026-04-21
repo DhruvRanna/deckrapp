@@ -63,6 +63,7 @@ async function callOpenAICompatible(opts: {
       model: opts.model,
       messages: opts.messages,
       temperature: opts.temperature,
+      max_tokens: 4096,
       tools: [{
         type: "function",
         function: {
@@ -105,7 +106,7 @@ async function callGeminiNative(opts: {
     body: JSON.stringify({
       systemInstruction: sys ? { parts: [{ text: sys }] } : undefined,
       contents: userParts,
-      generationConfig: { temperature: opts.temperature },
+      generationConfig: { temperature: opts.temperature, maxOutputTokens: 8192 },
       tools: [{
         functionDeclarations: [{
           name: opts.tool.name,

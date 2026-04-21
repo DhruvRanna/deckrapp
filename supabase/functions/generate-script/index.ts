@@ -42,7 +42,7 @@ Tone: energetic, authentic, optimized for ${platform}. Duration: ${duration}. Ni
       const script = await generateWithFallback({
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Generate a complete script and creator resources for:\nTitle: "${title}"\nHook: "${hook}"\nPlatform: ${platform}\nNiche: ${niche}\nDuration: ${duration}` },
+          { role: "user", content: `Generate a complete script and creator resources for:\nTitle: "${title}"\nHook: "${hook}"\nPlatform: ${platform}\nNiche: ${niche}\nDuration: ${duration}\n\nIMPORTANT: bodyText MUST be a detailed multi-paragraph script (at least 400 characters) with [OPEN], [MIDDLE], [CLOSE] sections, scene directions, and concrete value. Never return an empty or one-line body.` },
         ],
         tool: {
           name: "generate_script",
@@ -50,8 +50,8 @@ Tone: energetic, authentic, optimized for ${platform}. Duration: ${duration}. Ni
           parameters: {
             type: "object",
             properties: {
-              hookText: { type: "string" },
-              bodyText: { type: "string" },
+              hookText: { type: "string", description: "Opening hook, 1-2 sentences" },
+              bodyText: { type: "string", description: "Detailed script body with [OPEN], [MIDDLE], [CLOSE] sections — minimum 400 chars" },
               ctaText: { type: "string" },
               deliveryTip: { type: "string" },
               hashtags: { type: "array", items: { type: "string" } },
@@ -65,11 +65,22 @@ Tone: energetic, authentic, optimized for ${platform}. Duration: ${duration}. Ni
         temperature: 0.9,
       });
 
-      return new Response(JSON.stringify({ ...script, fallback: false }), {
+      // Backfill any missing/too-short fields from template so user always gets a complete viral script.
+      const tpl = templateScript(title, platform, hook, niche || "Content", duration || "60s");
+      const safe = {
+        hookText: (script?.hookText && script.hookText.trim().length > 5) ? script.hookText : tpl.hookText,
+        bodyText: (script?.bodyText && script.bodyText.trim().length > 80) ? script.bodyText : tpl.bodyText,
+        ctaText: (script?.ctaText && script.ctaText.trim().length > 5) ? script.ctaText : tpl.ctaText,
+        deliveryTip: (script?.deliveryTip && script.deliveryTip.trim().length > 10) ? script.deliveryTip : tpl.deliveryTip,
+        hashtags: (Array.isArray(script?.hashtags) && script.hashtags.length >= 3) ? script.hashtags : tpl.hashtags,
+        thumbnailIdea: (script?.thumbnailIdea && script.thumbnailIdea.trim().length > 10) ? script.thumbnailIdea : tpl.thumbnailIdea,
+        captionIdea: (script?.captionIdea && script.captionIdea.trim().length > 10) ? script.captionIdea : tpl.captionIdea,
+      };
+
+      return new Response(JSON.stringify({ ...safe, fallback: false }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } catch (e) {
-      // Graceful fallback: deliver a template script so the user always gets something.
       const reason = e instanceof AllProvidersFailedError ? e.reason : "generic";
       console.warn("[generate-script] using template fallback:", reason, (e as Error).message);
       const tpl = templateScript(title, platform, hook, niche || "Content", duration || "60s");
