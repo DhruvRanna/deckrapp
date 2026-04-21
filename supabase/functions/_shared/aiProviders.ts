@@ -106,7 +106,7 @@ async function callGeminiNative(opts: {
     body: JSON.stringify({
       systemInstruction: sys ? { parts: [{ text: sys }] } : undefined,
       contents: userParts,
-      generationConfig: { temperature: opts.temperature },
+      generationConfig: { temperature: opts.temperature, maxOutputTokens: 8192 },
       tools: [{
         functionDeclarations: [{
           name: opts.tool.name,
