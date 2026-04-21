@@ -63,6 +63,7 @@ async function callOpenAICompatible(opts: {
       model: opts.model,
       messages: opts.messages,
       temperature: opts.temperature,
+      max_tokens: 4096,
       tools: [{
         type: "function",
         function: {
