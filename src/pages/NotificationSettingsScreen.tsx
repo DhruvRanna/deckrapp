@@ -6,7 +6,7 @@ import { useApp } from "@/context/AppContext";
 const NotificationSettingsScreen: React.FC = () => {
   const navigate = useNavigate();
   const { user, updateNotifications } = useApp();
-  const [on, setOn] = useState(user?.notificationsEnabled ?? true);
+  const [on, setOn] = useState(user?.notificationsEnabled ?? false);
 
   const handleSave = async () => {
     await updateNotifications(on);

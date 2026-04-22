@@ -1,7 +1,44 @@
 import { useTheme } from "next-themes";
-import { Toaster as Sonner, toast } from "sonner";
+import { Toaster as Sonner, toast as rawToast } from "sonner";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
+
+// Global notification gate — flipped by AppContext based on user.notificationsEnabled.
+// Default OFF so new sessions don't show toasts until the user opts in.
+declare global {
+  interface Window {
+    __notificationsEnabled?: boolean;
+  }
+}
+if (typeof window !== "undefined" && window.__notificationsEnabled === undefined) {
+  window.__notificationsEnabled = false;
+}
+
+const isOn = () =>
+  typeof window === "undefined" ? true : window.__notificationsEnabled !== false;
+
+// Patch sonner's toast object so every existing `import { toast } from "sonner"`
+// call site is automatically gated — no refactor needed across the codebase.
+const patched = new Set<string>();
+const gate = (fn: any) => (...args: any[]) => (isOn() ? fn(...args) : undefined);
+const patchToast = () => {
+  if (patched.has("root")) return;
+  const t = rawToast as any;
+  ["success", "error", "info", "warning", "message", "loading", "custom"].forEach((k) => {
+    if (typeof t[k] === "function") {
+      const orig = t[k].bind(t);
+      t[k] = (...args: any[]) => (isOn() ? orig(...args) : undefined);
+    }
+  });
+  patched.add("root");
+};
+patchToast();
+
+// Callable form: toast("...") — wrap by exporting a gated function that
+// preserves the patched method properties above.
+const toast: typeof rawToast = ((...args: Parameters<typeof rawToast>) =>
+  isOn() ? (rawToast as any)(...args) : undefined) as any;
+Object.assign(toast, rawToast);
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme();

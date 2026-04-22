@@ -114,7 +114,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const email = authData?.email || "";
       const name = authData?.user_metadata?.display_name || email.split("@")[0] || "";
       const { data: newProfile } = await supabase.from("profiles").insert({
-        user_id: uid, display_name: name, email,
+        user_id: uid, display_name: name, email, notifications_enabled: false,
       }).select().single();
       profile = newProfile;
       if (!profile) return null;
@@ -162,6 +162,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setUser(userProfile);
+    if (typeof window !== "undefined") {
+      window.__notificationsEnabled = !!userProfile.notificationsEnabled;
+    }
     return userProfile;
   }, []);
 
@@ -174,6 +177,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } else {
         setAuthUser(null);
         setUser(null);
+        if (typeof window !== "undefined") window.__notificationsEnabled = false;
         setIsLoading(false);
       }
     });
@@ -269,6 +273,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateNotifications = useCallback(async (enabled: boolean) => {
     if (!authUser) return;
+    if (typeof window !== "undefined") window.__notificationsEnabled = enabled;
     await supabase.from("profiles").update({ notifications_enabled: enabled }).eq("user_id", authUser.id);
     await loadProfile(authUser.id);
   }, [authUser, loadProfile]);

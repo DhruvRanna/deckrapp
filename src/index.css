@@ -120,6 +120,13 @@
 .theme-coral   { --t-bg: 8 85% 93%;   --t-surface: 8 80% 87%;   --t-primary: 8 80% 58%;   --t-text: 8 55% 28%;   --t-muted: 8 25% 48%; }
 .theme-indigo  { --t-bg: 230 75% 94%; --t-surface: 230 65% 88%; --t-primary: 230 70% 55%; --t-text: 230 50% 28%; --t-muted: 230 22% 48%; }
 .theme-lime    { --t-bg: 80 70% 92%;  --t-surface: 80 60% 85%;  --t-primary: 88 65% 42%;  --t-text: 88 55% 22%;  --t-muted: 80 25% 42%; }
+.theme-sunset  { --t-bg: 18 95% 93%;  --t-surface: 18 85% 86%;  --t-primary: 14 88% 56%;  --t-text: 14 60% 28%;  --t-muted: 18 28% 48%; }
+.theme-plum    { --t-bg: 295 60% 94%; --t-surface: 295 50% 88%; --t-primary: 295 55% 52%; --t-text: 295 45% 26%; --t-muted: 295 22% 48%; }
+.theme-ocean   { --t-bg: 195 75% 93%; --t-surface: 195 65% 86%; --t-primary: 195 80% 40%; --t-text: 200 60% 22%; --t-muted: 195 28% 44%; }
+.theme-forest  { --t-bg: 155 50% 92%; --t-surface: 155 45% 85%; --t-primary: 155 60% 32%; --t-text: 155 55% 18%; --t-muted: 155 25% 40%; }
+.theme-blush   { --t-bg: 355 80% 95%; --t-surface: 355 70% 89%; --t-primary: 350 75% 60%; --t-text: 350 50% 30%; --t-muted: 355 22% 50%; }
+.theme-amber   { --t-bg: 38 95% 92%;  --t-surface: 38 88% 85%;  --t-primary: 32 92% 50%;  --t-text: 28 60% 26%;  --t-muted: 35 30% 46%; }
+.theme-violet  { --t-bg: 270 70% 95%; --t-surface: 270 60% 88%; --t-primary: 270 65% 60%; --t-text: 270 50% 28%; --t-muted: 270 22% 50%; }
 
 .swipe-card { background: hsl(var(--t-bg)); color: hsl(var(--t-text)); }
 .swipe-card .t-surface { background: hsl(var(--t-surface) / 0.55); }
