@@ -177,6 +177,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } else {
         setAuthUser(null);
         setUser(null);
+        if (typeof window !== "undefined") window.__notificationsEnabled = false;
         setIsLoading(false);
       }
     });
@@ -272,6 +273,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateNotifications = useCallback(async (enabled: boolean) => {
     if (!authUser) return;
+    if (typeof window !== "undefined") window.__notificationsEnabled = enabled;
     await supabase.from("profiles").update({ notifications_enabled: enabled }).eq("user_id", authUser.id);
     await loadProfile(authUser.id);
   }, [authUser, loadProfile]);
