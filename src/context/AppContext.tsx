@@ -114,7 +114,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const email = authData?.email || "";
       const name = authData?.user_metadata?.display_name || email.split("@")[0] || "";
       const { data: newProfile } = await supabase.from("profiles").insert({
-        user_id: uid, display_name: name, email,
+        user_id: uid, display_name: name, email, notifications_enabled: false,
       }).select().single();
       profile = newProfile;
       if (!profile) return null;
@@ -162,6 +162,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setUser(userProfile);
+    if (typeof window !== "undefined") {
+      window.__notificationsEnabled = !!userProfile.notificationsEnabled;
+    }
     return userProfile;
   }, []);
 
