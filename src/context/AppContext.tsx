@@ -169,6 +169,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       window.__notificationsEnabled = !!userProfile.notificationsEnabled;
     }
     return userProfile;
+    } catch (err) {
+      console.error("[loadProfile] unexpected error:", err);
+      return null;
+    }
   }, []);
 
   useEffect(() => {
