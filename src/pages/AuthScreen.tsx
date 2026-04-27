@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 const AuthScreen: React.FC = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, hasCompletedOnboarding, isLoading: authLoading } = useApp();
+  const { isAuthenticated, hasCompletedOnboarding, isLoading: authLoading, login, signup } = useApp();
   const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
@@ -17,8 +17,6 @@ const AuthScreen: React.FC = () => {
       navigate(hasCompletedOnboarding ? "/swipe" : "/onboarding/niche", { replace: true });
     }
   }, [isAuthenticated, hasCompletedOnboarding, authLoading, navigate]);
-
-  const { login, signup } = useApp();
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
