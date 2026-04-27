@@ -45,14 +45,25 @@ const AuthScreen: React.FC = () => {
     try {
       if (mode === "login") {
         await login(email, password);
-        toast.success("Logged in successfully");
+        toast.success("Welcome back!");
       } else {
         await signup(name, email, password);
-        toast.success("Account created. Check your email to verify your account.");
-        setMode("login");
+        // Auto-confirm is on, so sign the user in immediately.
+        try { await login(email, password); } catch {}
+        toast.success("Account created!");
       }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : mode === "login" ? "Login failed" : "Signup failed";
+    } catch (error: any) {
+      const raw = error?.message || "";
+      let message = mode === "login" ? "Login failed" : "Signup failed";
+      if (/failed to fetch|network/i.test(raw)) {
+        message = "Network issue — please check your connection and try again.";
+      } else if (/invalid login/i.test(raw)) {
+        message = "Wrong email or password.";
+      } else if (/already registered|already exists|user already/i.test(raw)) {
+        message = "This email is already registered. Try logging in.";
+      } else if (raw) {
+        message = raw;
+      }
       toast.error(message);
     } finally {
       setLoading(false);
