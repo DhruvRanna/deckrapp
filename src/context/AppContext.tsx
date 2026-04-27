@@ -176,11 +176,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    // Hard safety: never let the splash hang more than 6s, no matter what.
+    const failsafe = setTimeout(() => {
+      if (!cancelled) setIsLoading(false);
+    }, 6000);
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         setIsLoading(true);
         setAuthUser(session.user);
-        setTimeout(() => loadProfile(session.user.id).finally(() => setIsLoading(false)), 0);
+        setTimeout(() => {
+          loadProfile(session.user.id)
+            .catch(e => console.warn("[auth] loadProfile error:", e))
+            .finally(() => setIsLoading(false));
+        }, 0);
       } else {
         setAuthUser(null);
         setUser(null);
@@ -189,17 +199,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setIsLoading(true);
-        setAuthUser(session.user);
-        loadProfile(session.user.id).finally(() => setIsLoading(false));
-      } else {
-        setIsLoading(false);
-      }
-    });
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        if (cancelled) return;
+        if (session?.user) {
+          setIsLoading(true);
+          setAuthUser(session.user);
+          loadProfile(session.user.id)
+            .catch(e => console.warn("[init] loadProfile error:", e))
+            .finally(() => { if (!cancelled) setIsLoading(false); });
+        } else {
+          setIsLoading(false);
+        }
+      })
+      .catch(err => {
+        // Transient network / AuthRetryableFetchError — don't block the UI.
+        console.warn("[init] getSession failed:", err?.message || err);
+        if (!cancelled) setIsLoading(false);
+      });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      clearTimeout(failsafe);
+      subscription.unsubscribe();
+    };
   }, [loadProfile]);
 
   const login = useCallback(async (email: string, password: string) => {
