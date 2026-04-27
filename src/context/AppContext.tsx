@@ -107,15 +107,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => { userRef.current = user; }, [user]);
 
   const loadProfile = useCallback(async (uid: string) => {
-    let { data: profile } = await supabase.from("profiles").select("*").eq("user_id", uid).maybeSingle();
+    try {
+    let { data: profile, error: pErr } = await supabase.from("profiles").select("*").eq("user_id", uid).maybeSingle();
+    if (pErr) { console.warn("[loadProfile] fetch failed:", pErr.message); return null; }
     if (!profile) {
       // Auto-create profile if missing
       const { data: { user: authData } } = await supabase.auth.getUser();
       const email = authData?.email || "";
       const name = authData?.user_metadata?.display_name || email.split("@")[0] || "";
-      const { data: newProfile } = await supabase.from("profiles").insert({
+      const { data: newProfile, error: insErr } = await supabase.from("profiles").insert({
         user_id: uid, display_name: name, email, notifications_enabled: false,
       }).select().single();
+      if (insErr) { console.warn("[loadProfile] profile create failed:", insErr.message); return null; }
       profile = newProfile;
       if (!profile) return null;
     }
@@ -166,14 +169,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       window.__notificationsEnabled = !!userProfile.notificationsEnabled;
     }
     return userProfile;
+    } catch (err) {
+      console.error("[loadProfile] unexpected error:", err);
+      return null;
+    }
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    // Hard safety: never let the splash hang more than 6s, no matter what.
+    const failsafe = setTimeout(() => {
+      if (!cancelled) setIsLoading(false);
+    }, 6000);
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         setIsLoading(true);
         setAuthUser(session.user);
-        setTimeout(() => loadProfile(session.user.id).finally(() => setIsLoading(false)), 0);
+        setTimeout(() => {
+          loadProfile(session.user.id)
+            .catch(e => console.warn("[auth] loadProfile error:", e))
+            .finally(() => setIsLoading(false));
+        }, 0);
       } else {
         setAuthUser(null);
         setUser(null);
@@ -182,17 +199,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setIsLoading(true);
-        setAuthUser(session.user);
-        loadProfile(session.user.id).finally(() => setIsLoading(false));
-      } else {
-        setIsLoading(false);
-      }
-    });
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        if (cancelled) return;
+        if (session?.user) {
+          setIsLoading(true);
+          setAuthUser(session.user);
+          loadProfile(session.user.id)
+            .catch(e => console.warn("[init] loadProfile error:", e))
+            .finally(() => { if (!cancelled) setIsLoading(false); });
+        } else {
+          setIsLoading(false);
+        }
+      })
+      .catch(err => {
+        // Transient network / AuthRetryableFetchError — don't block the UI.
+        console.warn("[init] getSession failed:", err?.message || err);
+        if (!cancelled) setIsLoading(false);
+      });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      clearTimeout(failsafe);
+      subscription.unsubscribe();
+    };
   }, [loadProfile]);
 
   const login = useCallback(async (email: string, password: string) => {
