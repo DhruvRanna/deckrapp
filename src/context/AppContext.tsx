@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import type { User as SupaUser } from "@supabase/supabase-js";
+import type { User as SupaUser, Session } from "@supabase/supabase-js";
+import { isPreviewAuthEnvironment } from "@/lib/authEnv";
+import type { AuthAction, AuthActionResult } from "@/lib/authTypes";
 
 interface UserPlan {
   id: string;
@@ -68,8 +70,10 @@ interface AppContextType {
   isAuthenticated: boolean;
   hasCompletedOnboarding: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<AuthActionResult>;
+  signup: (name: string, email: string, password: string) => Promise<AuthActionResult>;
+  requestPasswordReset: (email: string) => Promise<AuthActionResult>;
+  resendVerification: (email: string) => Promise<AuthActionResult>;
   logout: () => Promise<void>;
   completeOnboarding: (niches: string[], platforms: string[], frequency: string) => Promise<void>;
   saveIdea: (idea: ContentIdea) => Promise<void>;
@@ -103,72 +107,136 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isLoading, setIsLoading] = useState(true);
   const userRef = useRef<UserProfile | null>(null);
 
-  // Keep ref in sync with state
   useEffect(() => { userRef.current = user; }, [user]);
+
+  const buildResult = useCallback((params: {
+    ok: boolean;
+    action: AuthAction;
+    email: string;
+    message: string;
+    transport: "client" | "proxy";
+    startedAt: number;
+    emailRequested?: boolean;
+    verificationRequired?: boolean;
+    sessionEstablished?: boolean;
+    errorCode?: string;
+    errorMessage?: string;
+  }): AuthActionResult => ({
+    ok: params.ok,
+    action: params.action,
+    email: params.email,
+    message: params.message,
+    transport: params.transport,
+    durationMs: Date.now() - params.startedAt,
+    timestamp: new Date().toISOString(),
+    emailRequested: params.emailRequested,
+    verificationRequired: params.verificationRequired,
+    sessionEstablished: params.sessionEstablished,
+    errorCode: params.errorCode,
+    errorMessage: params.errorMessage,
+  }), []);
+
+  const parseError = (error: unknown, fallback: string) => {
+    const message = error instanceof Error ? error.message : fallback;
+    return {
+      message,
+      code: error && typeof error === "object" && "name" in error ? String((error as { name?: string }).name || "") : undefined,
+    };
+  };
+
+  const withRetry = async <T,>(fn: () => Promise<T>, attempts = 3, delayMs = 600): Promise<T> => {
+    let lastErr: any;
+    for (let i = 0; i < attempts; i++) {
+      try {
+        return await fn();
+      } catch (e: any) {
+        lastErr = e;
+        const msg = (e?.message || "").toLowerCase();
+        const transient = msg.includes("failed to fetch") || msg.includes("network") || e?.status === 0;
+        if (!transient || i === attempts - 1) throw e;
+        await new Promise(r => setTimeout(r, delayMs * (i + 1)));
+      }
+    }
+    throw lastErr;
+  };
+
+  const applySession = useCallback(async (session: Session | null | undefined) => {
+    if (!session) return;
+    const { error } = await supabase.auth.setSession({
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+    });
+    if (error) throw error;
+  }, []);
+
+  const callAuthProxy = useCallback(async (action: "signup" | "login" | "forgot_password" | "resend_verification", payload: Record<string, unknown>) => {
+    const { data, error } = await supabase.functions.invoke("auth-proxy", {
+      body: {
+        action,
+        redirectTo: `${window.location.origin}/reset-password`,
+        ...payload,
+      },
+    });
+
+    if (error) throw error;
+    return data as (AuthActionResult & { session?: Session | null });
+  }, []);
 
   const loadProfile = useCallback(async (uid: string) => {
     try {
-    let { data: profile, error: pErr } = await supabase.from("profiles").select("*").eq("user_id", uid).maybeSingle();
-    if (pErr) { console.warn("[loadProfile] fetch failed:", pErr.message); return null; }
-    if (!profile) {
-      // Auto-create profile if missing
-      const { data: { user: authData } } = await supabase.auth.getUser();
-      const email = authData?.email || "";
-      const name = authData?.user_metadata?.display_name || email.split("@")[0] || "";
-      const { data: newProfile, error: insErr } = await supabase.from("profiles").insert({
-        user_id: uid, display_name: name, email, notifications_enabled: false,
-      }).select().single();
-      if (insErr) { console.warn("[loadProfile] profile create failed:", insErr.message); return null; }
-      profile = newProfile;
-      if (!profile) return null;
-    }
+      let { data: profile, error: pErr } = await supabase.from("profiles").select("*").eq("user_id", uid).maybeSingle();
+      if (pErr) { console.warn("[loadProfile] fetch failed:", pErr.message); return null; }
+      if (!profile) {
+        const { data: { user: authData } } = await supabase.auth.getUser();
+        const email = authData?.email || "";
+        const name = authData?.user_metadata?.display_name || email.split("@")[0] || "";
+        const { data: newProfile, error: insErr } = await supabase.from("profiles").insert({
+          user_id: uid, display_name: name, email, notifications_enabled: false,
+        }).select().single();
+        if (insErr) { console.warn("[loadProfile] profile create failed:", insErr.message); return null; }
+        profile = newProfile;
+        if (!profile) return null;
+      }
 
-    const { data: ideas } = await supabase.from("saved_ideas").select("*").eq("user_id", uid).order("created_at", { ascending: false });
-    const { data: scripts } = await supabase.from("scripts").select("*").eq("user_id", uid).order("created_at", { ascending: false });
+      const { data: ideas } = await supabase.from("saved_ideas").select("*").eq("user_id", uid).order("created_at", { ascending: false });
+      const { data: scripts } = await supabase.from("scripts").select("*").eq("user_id", uid).order("created_at", { ascending: false });
+      const plan = PLANS[profile.plan] || PLANS.FREE;
+      const today = new Date().toISOString().split("T")[0];
+      let swipesToday = profile.swipes_today;
+      if (profile.last_swipe_date !== today) {
+        swipesToday = 0;
+        await supabase.from("profiles").update({ swipes_today: 0, last_swipe_date: today }).eq("user_id", uid);
+      }
+      const localSwipes = userRef.current?.swipesToday || 0;
+      if (localSwipes > swipesToday && profile.last_swipe_date === today) swipesToday = localSwipes;
 
-    const plan = PLANS[profile.plan] || PLANS.FREE;
+      const userProfile: UserProfile = {
+        name: profile.display_name,
+        email: profile.email,
+        plan,
+        niches: profile.niches || [],
+        platforms: profile.platforms || [],
+        postingFrequency: profile.posting_frequency || "",
+        savedIdeas: (ideas || []).map((i: any) => ({
+          id: i.id, platform: i.platform, title: i.title, hook: i.hook, insight: i.insight,
+          tags: i.tags || [], duration: i.duration, competition: i.competition,
+          viralScore: i.viral_score, color: i.color, scheduledDate: i.scheduled_date,
+        })),
+        scripts: (scripts || []).map((s: any) => ({
+          id: s.id, ideaId: s.idea_id, title: s.title, platform: s.platform,
+          hookText: s.hook_text, bodyText: s.body_text, ctaText: s.cta_text,
+          deliveryTip: s.delivery_tip, createdAt: s.created_at,
+        })),
+        swipesToday,
+        scriptsThisMonth: profile.scripts_this_month,
+        streak: profile.streak,
+        notificationsEnabled: profile.notifications_enabled,
+        onboardingCompleted: profile.onboarding_completed,
+      };
 
-    const today = new Date().toISOString().split("T")[0];
-    let swipesToday = profile.swipes_today;
-    if (profile.last_swipe_date !== today) {
-      swipesToday = 0;
-      await supabase.from("profiles").update({ swipes_today: 0, last_swipe_date: today }).eq("user_id", uid);
-    }
-    // Preserve local swipe count if it's higher (DB update may be in-flight)
-    const localSwipes = userRef.current?.swipesToday || 0;
-    if (localSwipes > swipesToday && profile.last_swipe_date === today) {
-      swipesToday = localSwipes;
-    }
-
-    const userProfile: UserProfile = {
-      name: profile.display_name,
-      email: profile.email,
-      plan,
-      niches: profile.niches || [],
-      platforms: profile.platforms || [],
-      postingFrequency: profile.posting_frequency || "",
-      savedIdeas: (ideas || []).map((i: any) => ({
-        id: i.id, platform: i.platform, title: i.title, hook: i.hook, insight: i.insight,
-        tags: i.tags || [], duration: i.duration, competition: i.competition,
-        viralScore: i.viral_score, color: i.color, scheduledDate: i.scheduled_date,
-      })),
-      scripts: (scripts || []).map((s: any) => ({
-        id: s.id, ideaId: s.idea_id, title: s.title, platform: s.platform,
-        hookText: s.hook_text, bodyText: s.body_text, ctaText: s.cta_text,
-        deliveryTip: s.delivery_tip, createdAt: s.created_at,
-      })),
-      swipesToday,
-      scriptsThisMonth: profile.scripts_this_month,
-      streak: profile.streak,
-      notificationsEnabled: profile.notifications_enabled,
-      onboardingCompleted: profile.onboarding_completed,
-    };
-
-    setUser(userProfile);
-    if (typeof window !== "undefined") {
-      window.__notificationsEnabled = !!userProfile.notificationsEnabled;
-    }
-    return userProfile;
+      setUser(userProfile);
+      if (typeof window !== "undefined") window.__notificationsEnabled = !!userProfile.notificationsEnabled;
+      return userProfile;
     } catch (err) {
       console.error("[loadProfile] unexpected error:", err);
       return null;
@@ -177,12 +245,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     let cancelled = false;
-    // Hard safety: never let the splash hang more than 6s, no matter what.
     const failsafe = setTimeout(() => {
       if (!cancelled) setIsLoading(false);
     }, 6000);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setIsLoading(true);
         setAuthUser(session.user);
@@ -213,7 +280,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       })
       .catch(err => {
-        // Transient network / AuthRetryableFetchError — don't block the UI.
         console.warn("[init] getSession failed:", err?.message || err);
         if (!cancelled) setIsLoading(false);
       });
@@ -225,36 +291,163 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, [loadProfile]);
 
-  // Retry helper — Supabase auth occasionally returns "Failed to fetch" on cold starts / flaky networks.
-  const withRetry = async <T,>(fn: () => Promise<T>, attempts = 3, delayMs = 600): Promise<T> => {
-    let lastErr: any;
-    for (let i = 0; i < attempts; i++) {
-      try {
-        return await fn();
-      } catch (e: any) {
-        lastErr = e;
-        const msg = (e?.message || "").toLowerCase();
-        const transient = msg.includes("failed to fetch") || msg.includes("network") || e?.status === 0;
-        if (!transient || i === attempts - 1) throw e;
-        await new Promise(r => setTimeout(r, delayMs * (i + 1)));
-      }
-    }
-    throw lastErr;
-  };
-
   const login = useCallback(async (email: string, password: string) => {
-    const { error } = await withRetry(() => supabase.auth.signInWithPassword({ email, password }));
-    if (error) throw error;
-  }, []);
+    const startedAt = Date.now();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    try {
+      if (isPreviewAuthEnvironment()) {
+        const proxyResult = await callAuthProxy("login", { email: normalizedEmail, password });
+        if (proxyResult.session) await applySession(proxyResult.session);
+        return proxyResult;
+      }
+
+      const { data, error } = await withRetry(() => supabase.auth.signInWithPassword({ email: normalizedEmail, password }));
+      if (error) throw error;
+      return buildResult({
+        ok: true,
+        action: "login",
+        email: normalizedEmail,
+        message: "Login successful.",
+        transport: "client",
+        startedAt,
+        sessionEstablished: !!data.session,
+      });
+    } catch (error) {
+      const parsed = parseError(error, "Login failed.");
+      return buildResult({
+        ok: false,
+        action: "login",
+        email: normalizedEmail,
+        message: parsed.message,
+        transport: isPreviewAuthEnvironment() ? "proxy" : "client",
+        startedAt,
+        verificationRequired: /email not confirmed/i.test(parsed.message),
+        errorCode: parsed.code,
+        errorMessage: parsed.message,
+      });
+    }
+  }, [applySession, buildResult, callAuthProxy]);
 
   const signup = useCallback(async (name: string, email: string, password: string) => {
-    const { error } = await withRetry(() => supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { display_name: name }, emailRedirectTo: window.location.origin },
-    }));
-    if (error) throw error;
-  }, []);
+    const startedAt = Date.now();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    try {
+      if (isPreviewAuthEnvironment()) {
+        const proxyResult = await callAuthProxy("signup", { email: normalizedEmail, password, name });
+        if (proxyResult.session) await applySession(proxyResult.session);
+        return proxyResult;
+      }
+
+      const { data, error } = await withRetry(() => supabase.auth.signUp({
+        email: normalizedEmail,
+        password,
+        options: { data: { display_name: name }, emailRedirectTo: window.location.origin },
+      }));
+      if (error) throw error;
+      return buildResult({
+        ok: true,
+        action: "signup",
+        email: normalizedEmail,
+        message: data.session ? "Account created and session started." : "Verification email requested successfully.",
+        transport: "client",
+        startedAt,
+        emailRequested: !data.session,
+        verificationRequired: !data.session,
+        sessionEstablished: !!data.session,
+      });
+    } catch (error) {
+      const parsed = parseError(error, "Signup failed.");
+      return buildResult({
+        ok: false,
+        action: "signup",
+        email: normalizedEmail,
+        message: parsed.message,
+        transport: isPreviewAuthEnvironment() ? "proxy" : "client",
+        startedAt,
+        errorCode: parsed.code,
+        errorMessage: parsed.message,
+      });
+    }
+  }, [applySession, buildResult, callAuthProxy]);
+
+  const requestPasswordReset = useCallback(async (email: string) => {
+    const startedAt = Date.now();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    try {
+      if (isPreviewAuthEnvironment()) {
+        return await callAuthProxy("forgot_password", { email: normalizedEmail });
+      }
+
+      const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      return buildResult({
+        ok: true,
+        action: "forgot-password",
+        email: normalizedEmail,
+        message: "Password reset email requested successfully.",
+        transport: "client",
+        startedAt,
+        emailRequested: true,
+      });
+    } catch (error) {
+      const parsed = parseError(error, "Failed to send reset email.");
+      return buildResult({
+        ok: false,
+        action: "forgot-password",
+        email: normalizedEmail,
+        message: parsed.message,
+        transport: isPreviewAuthEnvironment() ? "proxy" : "client",
+        startedAt,
+        errorCode: parsed.code,
+        errorMessage: parsed.message,
+      });
+    }
+  }, [buildResult, callAuthProxy]);
+
+  const resendVerification = useCallback(async (email: string) => {
+    const startedAt = Date.now();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    try {
+      if (isPreviewAuthEnvironment()) {
+        return await callAuthProxy("resend_verification", { email: normalizedEmail });
+      }
+
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: normalizedEmail,
+        options: { emailRedirectTo: window.location.origin },
+      });
+      if (error) throw error;
+      return buildResult({
+        ok: true,
+        action: "resend-verification",
+        email: normalizedEmail,
+        message: "Verification email requested successfully.",
+        transport: "client",
+        startedAt,
+        emailRequested: true,
+        verificationRequired: true,
+      });
+    } catch (error) {
+      const parsed = parseError(error, "Failed to resend verification email.");
+      return buildResult({
+        ok: false,
+        action: "resend-verification",
+        email: normalizedEmail,
+        message: parsed.message,
+        transport: isPreviewAuthEnvironment() ? "proxy" : "client",
+        startedAt,
+        errorCode: parsed.code,
+        errorMessage: parsed.message,
+      });
+    }
+  }, [buildResult, callAuthProxy]);
 
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
@@ -262,9 +455,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const completeOnboarding = useCallback(async (niches: string[], platforms: string[], frequency: string) => {
     if (!authUser) return;
-    await supabase.from("profiles").update({
-      niches, platforms, posting_frequency: frequency, onboarding_completed: true,
-    }).eq("user_id", authUser.id);
+    await supabase.from("profiles").update({ niches, platforms, posting_frequency: frequency, onboarding_completed: true }).eq("user_id", authUser.id);
     await loadProfile(authUser.id);
   }, [authUser, loadProfile]);
 
@@ -358,9 +549,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <AppContext.Provider value={{
       user, authUser, isAuthenticated: !!authUser, hasCompletedOnboarding: user?.onboardingCompleted || false,
-      isLoading, login, signup, logout, completeOnboarding, saveIdea, deleteIdea, deleteScript,
-      scheduleIdea, upgradePlan, updateNiches, updatePostingFrequency, updateNotifications, updatePlatforms,
-      incrementSwipe, canSwipe, canGenerateScript, refreshData,
+      isLoading, login, signup, requestPasswordReset, resendVerification, logout, completeOnboarding,
+      saveIdea, deleteIdea, deleteScript, scheduleIdea, upgradePlan, updateNiches,
+      updatePostingFrequency, updateNotifications, updatePlatforms, incrementSwipe,
+      canSwipe, canGenerateScript, refreshData,
     }}>
       {children}
     </AppContext.Provider>
