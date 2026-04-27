@@ -29,24 +29,27 @@ const AuthDiagnosticsScreen: React.FC = () => {
     const name = form.name.trim();
 
     setLoadingAction(action);
-    let result: AuthActionResult;
+    try {
+      let result: AuthActionResult;
 
-    if (action === "signup") {
-      result = await signup(name, email, password);
-      retryRef.current = () => runAction("signup");
-    } else if (action === "login") {
-      result = await login(email, password);
-      retryRef.current = () => runAction("login");
-    } else if (action === "forgot-password") {
-      result = await requestPasswordReset(email);
-      retryRef.current = () => runAction("forgot-password");
-    } else {
-      result = await resendVerification(email);
-      retryRef.current = () => runAction("resend-verification");
+      if (action === "signup") {
+        result = await signup(name, email, password);
+        retryRef.current = () => runAction("signup");
+      } else if (action === "login") {
+        result = await login(email, password);
+        retryRef.current = () => runAction("login");
+      } else if (action === "forgot-password") {
+        result = await requestPasswordReset(email);
+        retryRef.current = () => runAction("forgot-password");
+      } else {
+        result = await resendVerification(email);
+        retryRef.current = () => runAction("resend-verification");
+      }
+
+      appendResult(result);
+    } finally {
+      setLoadingAction(null);
     }
-
-    appendResult(result);
-    setLoadingAction(null);
   };
 
   const sessionSummary = useMemo(() => {
@@ -147,7 +150,7 @@ const AuthDiagnosticsScreen: React.FC = () => {
           title="Auth diagnostics log"
           entries={entries}
           emptyLabel="Run an auth action to inspect the final result here."
-          onRetry={retryRef.current ? () => retryRef.current?.() : undefined}
+          onRetry={retryRef.current ? () => retryRef.current?.() ?? Promise.resolve() : undefined}
           onClear={() => setEntries([])}
           isRetrying={!!loadingAction}
         />

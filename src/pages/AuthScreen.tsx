@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useApp } from "@/context/AppContext";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const AuthScreen: React.FC = () => {
@@ -211,6 +210,9 @@ const AuthScreen: React.FC = () => {
           {" "}and{" "}
           <Link to="/privacy" className="underline text-foreground">Privacy Policy</Link>
         </p>
+        <Link to="/auth/diagnostics" className="mt-4 inline-block text-xs text-muted-foreground underline">
+          Open auth diagnostics
+        </Link>
       </div>
     </div>
   );
