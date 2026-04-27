@@ -225,17 +225,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, [loadProfile]);
 
+  // Retry helper — Supabase auth occasionally returns "Failed to fetch" on cold starts / flaky networks.
+  const withRetry = async <T,>(fn: () => Promise<T>, attempts = 3, delayMs = 600): Promise<T> => {
+    let lastErr: any;
+    for (let i = 0; i < attempts; i++) {
+      try {
+        return await fn();
+      } catch (e: any) {
+        lastErr = e;
+        const msg = (e?.message || "").toLowerCase();
+        const transient = msg.includes("failed to fetch") || msg.includes("network") || e?.status === 0;
+        if (!transient || i === attempts - 1) throw e;
+        await new Promise(r => setTimeout(r, delayMs * (i + 1)));
+      }
+    }
+    throw lastErr;
+  };
+
   const login = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await withRetry(() => supabase.auth.signInWithPassword({ email, password }));
     if (error) throw error;
   }, []);
 
   const signup = useCallback(async (name: string, email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
+    const { error } = await withRetry(() => supabase.auth.signUp({
       email,
       password,
       options: { data: { display_name: name }, emailRedirectTo: window.location.origin },
-    });
+    }));
     if (error) throw error;
   }, []);
 
