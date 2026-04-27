@@ -9,6 +9,7 @@ import WelcomeScreen from "@/pages/WelcomeScreen";
 import TutorialScreen from "@/pages/TutorialScreen";
 import { ScriptsIntroScreen, CalendarIntroScreen } from "@/pages/IntroScreens";
 import AuthScreen from "@/pages/AuthScreen";
+import AuthDiagnosticsScreen from "@/pages/AuthDiagnosticsScreen";
 import ResetPasswordScreen from "@/pages/ResetPasswordScreen";
 import OnboardingScreen from "@/pages/OnboardingScreen";
 import SwipeScreen from "@/pages/SwipeScreen";
@@ -60,6 +61,7 @@ const App = () => (
               <Route path="/onboarding/calendar-intro" element={<CalendarIntroScreen />} />
               <Route path="/tutorial" element={<TutorialScreen />} />
               <Route path="/auth" element={<AuthScreen />} />
+              <Route path="/auth/diagnostics" element={<AuthDiagnosticsScreen />} />
               <Route path="/reset-password" element={<ResetPasswordScreen />} />
               <Route path="/onboarding/niche" element={<OnboardingScreen step="niche" />} />
               <Route path="/onboarding/platform" element={<OnboardingScreen step="platform" />} />
