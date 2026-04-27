@@ -45,8 +45,8 @@ serve(async (req) => {
       }))
     );
     const trendingBlock = trendingByNiche
-      .filter(t => t.titles.length > 0)
-      .map(t => `${t.niche}:\n${t.titles.map(x => `  • ${x}`).join("\n")}`)
+      .filter((t: { niche: string; titles: string[] }) => t.titles.length > 0)
+      .map((t: { niche: string; titles: string[] }) => `${t.niche}:\n${t.titles.map((x: string) => `  • ${x}`).join("\n")}`)
       .join("\n\n") || "(no live data available)";
 
     const systemPrompt = `You are a viral content strategist for ${today}. You deeply understand trending topics, viral formats, and what makes content go viral RIGHT NOW on each specific platform. Generate FRESH, UNIQUE, ACTIONABLE ideas.
@@ -137,7 +137,7 @@ TRENDING FLAG: set "trending": true ONLY for ideas directly inspired by a title 
       const trending = await Promise.all(
         nb.slice(0, 3).map(async (n: string) => ({ niche: n, titles: await getYouTubeTrendingTitles(n, 10) }))
       );
-      const flat = trending.flatMap(t => t.titles.map(title => ({ niche: t.niche, title })));
+      const flat = trending.flatMap((t: { niche: string; titles: string[] }) => t.titles.map((title: string) => ({ niche: t.niche, title })));
       const ANGLES = ["POV", "Top 5", "I Tried", "Why You're Wrong About", "The Truth About", "Stop Doing", "Secret to", "Hidden", "Beginner Guide:", "Pro Tips:"];
       const ideas = aiVariety.shuffle(flat).slice(0, cb).map((t, i) => {
         const angle = ANGLES[Math.floor(Math.random() * ANGLES.length)];

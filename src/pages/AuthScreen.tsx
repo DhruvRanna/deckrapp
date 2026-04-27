@@ -1,12 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useApp } from "@/context/AppContext";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const AuthScreen: React.FC = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, hasCompletedOnboarding, isLoading: authLoading, login, signup } = useApp();
+  const { isAuthenticated, hasCompletedOnboarding, isLoading: authLoading, login, signup, requestPasswordReset } = useApp();
   const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
@@ -42,27 +41,20 @@ const AuthScreen: React.FC = () => {
     setLoading(true);
     try {
       if (mode === "login") {
-        await login(email, password);
-        toast.success("Welcome back!");
+        const result = await login(email, password);
+        if (result.ok) {
+          toast.success(result.message || "Welcome back!");
+        } else {
+          toast.error(result.message || "Login failed");
+        }
       } else {
-        await signup(name, email, password);
-        // Auto-confirm is on, so sign the user in immediately.
-        try { await login(email, password); } catch {}
-        toast.success("Account created!");
+        const result = await signup(name, email, password);
+        if (result.ok) {
+          toast.success(result.message || "Account created!");
+        } else {
+          toast.error(result.message || "Signup failed");
+        }
       }
-    } catch (error: any) {
-      const raw = error?.message || "";
-      let message = mode === "login" ? "Login failed" : "Signup failed";
-      if (/failed to fetch|network/i.test(raw)) {
-        message = "Network issue — please check your connection and try again.";
-      } else if (/invalid login/i.test(raw)) {
-        message = "Wrong email or password.";
-      } else if (/already registered|already exists|user already/i.test(raw)) {
-        message = "This email is already registered. Try logging in.";
-      } else if (raw) {
-        message = raw;
-      }
-      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -78,12 +70,13 @@ const AuthScreen: React.FC = () => {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-      if (error) throw error;
-      setResetSent(true);
-      toast.success("Password reset link sent! Check your email.");
+      const result = await requestPasswordReset(email);
+      if (result.ok) {
+        setResetSent(true);
+        toast.success(result.message || "Password reset link sent! Check your email.");
+      } else {
+        toast.error(result.message || "Failed to send reset email");
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to send reset email";
       toast.error(message);
@@ -217,6 +210,9 @@ const AuthScreen: React.FC = () => {
           {" "}and{" "}
           <Link to="/privacy" className="underline text-foreground">Privacy Policy</Link>
         </p>
+        <Link to="/auth/diagnostics" className="mt-4 inline-block text-xs text-muted-foreground underline">
+          Open auth diagnostics
+        </Link>
       </div>
     </div>
   );
