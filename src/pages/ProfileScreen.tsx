@@ -39,7 +39,7 @@ const ProfileScreen: React.FC = () => {
 
   const handleLogout = async () => {
     await logout();
-    navigate("/auth", { replace: true });
+    navigate("/");
   };
 
   const handleChangePassword = async () => {
@@ -71,7 +71,7 @@ const ProfileScreen: React.FC = () => {
       await supabase.from("profiles").delete().eq("user_id", authUser.id);
       await supabase.auth.signOut();
       toast.success("Account deleted");
-      navigate("/auth", { replace: true });
+      navigate("/");
     } catch (e: any) {
       toast.error(e?.message || "Failed to delete account");
     }
