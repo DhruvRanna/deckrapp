@@ -179,17 +179,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (error) throw error;
   }, []);
 
-  const syncAuthenticatedUser = useCallback(async (session: Session | null | undefined) => {
-    if (!session?.user) return;
-    setIsLoading(true);
-    setAuthUser(session.user);
-    try {
-      await loadProfile(session.user.id);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [loadProfile]);
-
   const callAuthProxy = useCallback(async (action: "signup" | "login" | "forgot_password" | "resend_verification", payload: Record<string, unknown>) => {
     const { data, error } = await new Promise<Awaited<ReturnType<typeof supabase.functions.invoke>>>((resolve, reject) => {
       const timeoutId = window.setTimeout(() => reject(new Error("Auth relay timed out.")), 4500);
@@ -232,7 +221,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const email = authData?.email || "";
         const name = authData?.user_metadata?.display_name || email.split("@")[0] || "";
         const { data: newProfile, error: insErr } = await supabase.from("profiles").insert({
-          user_id: uid, display_name: name, email, notifications_enabled: false,
+          user_id: uid, display_name: name, email, notifications_enabled: true,
         }).select().single();
         if (insErr) { console.warn("[loadProfile] profile create failed:", insErr.message); return null; }
         profile = newProfile;
@@ -276,13 +265,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
 
       setUser(userProfile);
-      if (typeof window !== "undefined") window.__notificationsEnabled = !!userProfile.notificationsEnabled;
+      if (typeof window !== "undefined") window.__notificationsEnabled = userProfile.notificationsEnabled !== false;
       return userProfile;
     } catch (err) {
       console.error("[loadProfile] unexpected error:", err);
       return null;
     }
   }, []);
+
+  const syncAuthenticatedUser = useCallback(async (session: Session | null | undefined) => {
+    if (!session?.user) return;
+    setIsLoading(true);
+    setAuthUser(session.user);
+    try {
+      await loadProfile(session.user.id);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [loadProfile]);
 
   useEffect(() => {
     let cancelled = false;
