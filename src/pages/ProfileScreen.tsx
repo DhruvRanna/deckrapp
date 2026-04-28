@@ -39,7 +39,7 @@ const ProfileScreen: React.FC = () => {
 
   const handleLogout = async () => {
     await logout();
-    navigate("/");
+    navigate("/auth", { replace: true });
   };
 
   const handleChangePassword = async () => {
