@@ -15,13 +15,13 @@ const SCRIPT_LINES = [
 
 export const ScriptsIntroScreen: React.FC = () => {
   const navigate = useNavigate();
-  const [revealed, setRevealed] = useState(0);
+  // Hook is always visible (fixed). Body & CTA animate in below it, then loop.
+  const [revealed, setRevealed] = useState(1);
 
   useEffect(() => {
-    // Start at 0, then reveal one by one, then reset
     const id = setInterval(() => {
-      setRevealed(r => (r >= SCRIPT_LINES.length ? 0 : r + 1));
-    }, 1000);
+      setRevealed(r => (r >= SCRIPT_LINES.length ? 1 : r + 1));
+    }, 1100);
     return () => clearInterval(id);
   }, []);
 
@@ -62,7 +62,9 @@ export const ScriptsIntroScreen: React.FC = () => {
 
           <div className="mt-4 space-y-3">
             {SCRIPT_LINES.map((line, i) => {
-              const visible = i < revealed;
+              // First line (HOOK) is always fixed/visible. Others animate in.
+              const isFixed = i === 0;
+              const visible = isFixed || i < revealed;
               const Icon = line.icon;
               return (
                 <div
@@ -71,7 +73,7 @@ export const ScriptsIntroScreen: React.FC = () => {
                   style={{
                     backgroundColor: line.bg,
                     opacity: visible ? 1 : 0,
-                    transform: visible ? "translateY(0) scale(1)" : "translateY(12px) scale(0.96)",
+                    transform: isFixed ? "none" : visible ? "translateY(0) scale(1)" : "translateY(12px) scale(0.96)",
                   }}
                 >
                   <div className="flex items-center gap-2">
