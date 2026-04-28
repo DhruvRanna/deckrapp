@@ -302,7 +302,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } else {
         setAuthUser(null);
         setUser(null);
-        if (typeof window !== "undefined") window.__notificationsEnabled = false;
+        if (typeof window !== "undefined") window.__notificationsEnabled = true;
         setIsLoading(false);
       }
     });
@@ -338,13 +338,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     try {
       if (isPreviewAuthEnvironment()) {
-        const proxyResult = await callAuthProxy("login", { email: normalizedEmail, password });
-        if (proxyResult.session) await applySession(proxyResult.session);
-        return proxyResult;
+        try {
+          const proxyResult = await callAuthProxy("login", { email: normalizedEmail, password });
+          if (proxyResult.session) {
+            await applySession(proxyResult.session);
+            await syncAuthenticatedUser(proxyResult.session);
+          }
+          return proxyResult;
+        } catch (proxyError) {
+          if (!isTransportFailure(proxyError)) throw proxyError;
+        }
       }
 
       const { data, error } = await withRetry(() => supabase.auth.signInWithPassword({ email: normalizedEmail, password }));
       if (error) throw error;
+      if (data.session) await syncAuthenticatedUser(data.session);
       return buildResult({
         ok: true,
         action: "login",
@@ -368,7 +376,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         errorMessage: parsed.message,
       });
     }
-  }, [applySession, buildResult, callAuthProxy]);
+  }, [applySession, buildResult, callAuthProxy, syncAuthenticatedUser]);
 
   const signup = useCallback(async (name: string, email: string, password: string) => {
     const startedAt = Date.now();
@@ -376,9 +384,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     try {
       if (isPreviewAuthEnvironment()) {
-        const proxyResult = await callAuthProxy("signup", { email: normalizedEmail, password, name });
-        if (proxyResult.session) await applySession(proxyResult.session);
-        return proxyResult;
+        try {
+          const proxyResult = await callAuthProxy("signup", { email: normalizedEmail, password, name });
+          if (proxyResult.session) {
+            await applySession(proxyResult.session);
+            await syncAuthenticatedUser(proxyResult.session);
+          }
+          return proxyResult;
+        } catch (proxyError) {
+          if (!isTransportFailure(proxyError)) throw proxyError;
+        }
       }
 
       const { data, error } = await withRetry(() => supabase.auth.signUp({
@@ -411,7 +426,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         errorMessage: parsed.message,
       });
     }
-  }, [applySession, buildResult, callAuthProxy]);
+  }, [applySession, buildResult, callAuthProxy, syncAuthenticatedUser]);
 
   const requestPasswordReset = useCallback(async (email: string) => {
     const startedAt = Date.now();
