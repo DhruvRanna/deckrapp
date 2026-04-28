@@ -247,7 +247,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let cancelled = false;
     const failsafe = setTimeout(() => {
       if (!cancelled) setIsLoading(false);
-    }, 6000);
+    }, 2500);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
