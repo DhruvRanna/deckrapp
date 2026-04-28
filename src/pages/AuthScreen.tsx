@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useApp } from "@/context/AppContext";
 import { toast } from "sonner";
+import { Eye, EyeOff } from "lucide-react";
 
 const AuthScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -9,6 +10,7 @@ const AuthScreen: React.FC = () => {
   const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const [resetSent, setResetSent] = useState(false);
 
   React.useEffect(() => {
@@ -132,14 +134,24 @@ const AuthScreen: React.FC = () => {
                 autoComplete="email"
                 className="w-full rounded-2xl border border-border bg-background px-4 py-4 text-sm outline-none transition-all placeholder:text-muted-foreground focus:border-foreground"
               />
-              <input
-                type="password"
-                value={form.password}
-                onChange={(e) => updateField("password", e.target.value)}
-                placeholder="Password"
-                autoComplete={mode === "login" ? "current-password" : "new-password"}
-                className="w-full rounded-2xl border border-border bg-background px-4 py-4 text-sm outline-none transition-all placeholder:text-muted-foreground focus:border-foreground"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={form.password}
+                  onChange={(e) => updateField("password", e.target.value)}
+                  placeholder="Password"
+                  autoComplete={mode === "login" ? "current-password" : "new-password"}
+                  className="w-full rounded-2xl border border-border bg-background px-4 py-4 pr-12 text-sm outline-none transition-all placeholder:text-muted-foreground focus:border-foreground"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
               {mode === "login" && (
                 <button
                   type="button"
@@ -210,9 +222,6 @@ const AuthScreen: React.FC = () => {
           {" "}and{" "}
           <Link to="/privacy" className="underline text-foreground">Privacy Policy</Link>
         </p>
-        <Link to="/auth/diagnostics" className="mt-4 inline-block text-xs text-muted-foreground underline">
-          Open auth diagnostics
-        </Link>
       </div>
     </div>
   );
