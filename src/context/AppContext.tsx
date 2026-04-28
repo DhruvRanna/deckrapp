@@ -144,6 +144,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   };
 
+  const isTransportFailure = (error: unknown) => {
+    const message = error instanceof Error ? error.message.toLowerCase() : "";
+    return (
+      message.includes("failed to fetch") ||
+      message.includes("network") ||
+      message.includes("timed out") ||
+      message.includes("timeout")
+    );
+  };
+
   const withRetry = async <T,>(fn: () => Promise<T>, attempts = 3, delayMs = 600): Promise<T> => {
     let lastErr: any;
     for (let i = 0; i < attempts; i++) {
@@ -169,17 +179,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (error) throw error;
   }, []);
 
+  const syncAuthenticatedUser = useCallback(async (session: Session | null | undefined) => {
+    if (!session?.user) return;
+    setIsLoading(true);
+    setAuthUser(session.user);
+    try {
+      await loadProfile(session.user.id);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [loadProfile]);
+
   const callAuthProxy = useCallback(async (action: "signup" | "login" | "forgot_password" | "resend_verification", payload: Record<string, unknown>) => {
-    const { data, error } = await supabase.functions.invoke("auth-proxy", {
-      body: {
-        action,
-        redirectTo: `${window.location.origin}/reset-password`,
-        ...payload,
-      },
+    const { data, error } = await new Promise<Awaited<ReturnType<typeof supabase.functions.invoke>>>((resolve, reject) => {
+      const timeoutId = window.setTimeout(() => reject(new Error("Auth relay timed out.")), 4500);
+
+      supabase.functions.invoke("auth-proxy", {
+        body: {
+          action,
+          redirectTo: `${window.location.origin}/reset-password`,
+          ...payload,
+        },
+      })
+        .then((result) => {
+          window.clearTimeout(timeoutId);
+          resolve(result);
+        })
+        .catch((invokeError) => {
+          window.clearTimeout(timeoutId);
+          reject(invokeError);
+        });
     });
 
     if (error) throw error;
-    return data as (AuthActionResult & { session?: Session | null });
+    return {
+      ...(data as Omit<AuthActionResult, "action"> & { session?: Session | null }),
+      action:
+        action === "forgot_password"
+          ? "forgot-password"
+          : action === "resend_verification"
+            ? "resend-verification"
+            : action,
+    } as AuthActionResult & { session?: Session | null };
   }, []);
 
   const loadProfile = useCallback(async (uid: string) => {
