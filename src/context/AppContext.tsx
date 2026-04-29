@@ -152,9 +152,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const message = error instanceof Error ? error.message.toLowerCase() : "";
     return (
       message.includes("failed to fetch") ||
+      message.includes("failed to send a request") ||
+      message.includes("edge function") ||
       message.includes("network") ||
       message.includes("timed out") ||
-      message.includes("timeout")
+      message.includes("timeout") ||
+      message.includes("functionsfetcherror")
     );
   };
 
@@ -515,11 +518,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
     } catch (error) {
       const parsed = parseError(error, "Login failed.");
+      const friendly = isTransportFailure(error)
+        ? "Network blocked in preview. Please open the published app to log in: https://deckrapp.lovable.app"
+        : parsed.message;
       return buildResult({
         ok: false,
         action: "login",
         email: normalizedEmail,
-        message: parsed.message,
+        message: friendly,
         transport: isPreviewAuthEnvironment() ? "proxy" : "client",
         startedAt,
         verificationRequired: /email not confirmed/i.test(parsed.message),
@@ -566,11 +572,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
     } catch (error) {
       const parsed = parseError(error, "Signup failed.");
+      const friendly = isTransportFailure(error)
+        ? "Network blocked in preview. Please open the published app to create an account: https://deckrapp.lovable.app"
+        : parsed.message;
       return buildResult({
         ok: false,
         action: "signup",
         email: normalizedEmail,
-        message: parsed.message,
+        message: friendly,
         transport: isPreviewAuthEnvironment() ? "proxy" : "client",
         startedAt,
         errorCode: parsed.code,

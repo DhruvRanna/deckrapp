@@ -115,19 +115,38 @@ const SwipeScreen: React.FC = () => {
     loadingRef.current = true;
     const niche = selectedNiche || user.niches[0] || "General";
     try {
-      // Send recently-shown titles so the AI avoids duplicates across batches.
       const recentTitles = ideas.slice(-30).map(i => i.title);
-      const { data, error } = await supabase.functions.invoke("generate-ideas", {
-        body: { niches: [niche], platforms: user.platforms, count: 10, recentTitles },
-      });
-      if (error) throw error;
+      // Direct fetch with hard timeout — supabase.functions.invoke can hang in preview proxy.
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 9000);
+      let data: any = null;
+      try {
+        const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-ideas`;
+        const resp = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ niches: [niche], platforms: user.platforms, count: 10, recentTitles }),
+          signal: controller.signal,
+        });
+        if (resp.ok) data = await resp.json();
+      } catch (fetchErr) {
+        console.warn("[loadIdeas] direct fetch failed:", fetchErr);
+      } finally {
+        window.clearTimeout(timeoutId);
+      }
+
       if (data?.ideas?.length) {
         setIdeas(prev => [...prev, ...data.ideas]);
-      } else if (data?.fallback) {
-        setIdeas(prev => prev.length < 5 ? [...prev, ...getFallbackIdeas()] : prev);
+      } else {
+        // Network blocked / AI down — show templates so user is never stuck on spinner.
+        setIdeas(prev => prev.length === 0 ? getFallbackIdeas() : prev);
       }
     } catch {
-      setIdeas(prev => prev.length < 3 ? [...prev, ...getFallbackIdeas()] : prev);
+      setIdeas(prev => prev.length === 0 ? getFallbackIdeas() : prev);
     } finally {
       loadingRef.current = false;
     }
@@ -136,10 +155,9 @@ const SwipeScreen: React.FC = () => {
   useEffect(() => {
     if (user && !initialLoaded) {
       setInitialLoaded(true);
-      setIdeas(getFallbackIdeas());
       loadIdeas();
     }
-  }, [user, initialLoaded, getFallbackIdeas, loadIdeas]);
+  }, [user, initialLoaded, loadIdeas]);
 
   // Reset ideas when niche changes
   const handleNicheChange = (niche: string) => {
@@ -148,12 +166,10 @@ const SwipeScreen: React.FC = () => {
     setIdeas([]);
     setCurrentIndex(0);
     loadingRef.current = false;
-    // Will reload via effect below
   };
 
   useEffect(() => {
     if (selectedNiche && initialLoaded) {
-      setIdeas(getFallbackIdeas());
       loadIdeas();
     }
   }, [selectedNiche]);
