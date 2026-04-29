@@ -155,10 +155,9 @@ const SwipeScreen: React.FC = () => {
   useEffect(() => {
     if (user && !initialLoaded) {
       setInitialLoaded(true);
-      setIdeas(getFallbackIdeas());
       loadIdeas();
     }
-  }, [user, initialLoaded, getFallbackIdeas, loadIdeas]);
+  }, [user, initialLoaded, loadIdeas]);
 
   // Reset ideas when niche changes
   const handleNicheChange = (niche: string) => {
@@ -167,12 +166,10 @@ const SwipeScreen: React.FC = () => {
     setIdeas([]);
     setCurrentIndex(0);
     loadingRef.current = false;
-    // Will reload via effect below
   };
 
   useEffect(() => {
     if (selectedNiche && initialLoaded) {
-      setIdeas(getFallbackIdeas());
       loadIdeas();
     }
   }, [selectedNiche]);
