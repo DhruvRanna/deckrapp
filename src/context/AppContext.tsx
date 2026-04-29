@@ -266,7 +266,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (error) throw error;
   }, []);
 
-  const directLogin = useCallback(async (email: string, password: string) => {
+  const directLogin = async (email: string, password: string) => {
     const data = await directAuthRequest<{
       access_token: string;
       refresh_token: string;
@@ -292,9 +292,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await applySession(session);
     await syncAuthenticatedUser(session);
     return session;
-  }, [applySession, directAuthRequest, syncAuthenticatedUser]);
+  };
 
-  const directSignup = useCallback(async (name: string, email: string, password: string) => {
+  const directSignup = async (name: string, email: string, password: string) => {
     const data = await directAuthRequest<{
       access_token?: string;
       refresh_token?: string;
@@ -328,7 +328,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await applySession(session);
     await syncAuthenticatedUser(session);
     return { session, user: data.user };
-  }, [applySession, directAuthRequest, syncAuthenticatedUser]);
+  };
 
   const callAuthProxy = useCallback(async (action: "signup" | "login" | "forgot_password" | "resend_verification", payload: Record<string, unknown>) => {
     const { data, error } = await new Promise<Awaited<ReturnType<typeof supabase.functions.invoke>>>((resolve, reject) => {
