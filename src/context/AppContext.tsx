@@ -152,9 +152,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const message = error instanceof Error ? error.message.toLowerCase() : "";
     return (
       message.includes("failed to fetch") ||
+      message.includes("failed to send a request") ||
+      message.includes("edge function") ||
       message.includes("network") ||
       message.includes("timed out") ||
-      message.includes("timeout")
+      message.includes("timeout") ||
+      message.includes("functionsfetcherror")
     );
   };
 
