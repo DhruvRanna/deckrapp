@@ -5,6 +5,10 @@ import type { User as SupaUser, Session } from "@supabase/supabase-js";
 import { isPreviewAuthEnvironment } from "@/lib/authEnv";
 import type { AuthAction, AuthActionResult } from "@/lib/authTypes";
 
+const AUTH_BASE_URL = `${import.meta.env.VITE_SUPABASE_URL}/auth/v1`;
+const AUTH_API_VERSION = "2024-01-01";
+const AUTH_REQUEST_TIMEOUT_MS = 3200;
+
 interface UserPlan {
   id: string;
   name: "FREE" | "CREATOR" | "PRO";
@@ -170,6 +174,89 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     throw lastErr;
   };
 
+  const authHeaders = useCallback(() => ({
+    apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+    "Content-Type": "application/json;charset=UTF-8",
+    "x-client-info": "deckr-direct-auth/1.0",
+    "x-supabase-api-version": AUTH_API_VERSION,
+  }), []);
+
+  const parseDirectAuthError = async (response: Response) => {
+    try {
+      const data = await response.json();
+      const message =
+        (typeof data?.msg === "string" && data.msg) ||
+        (typeof data?.message === "string" && data.message) ||
+        (typeof data?.error_description === "string" && data.error_description) ||
+        (typeof data?.error === "string" && data.error) ||
+        `Auth request failed (${response.status})`;
+
+      return {
+        message,
+        code:
+          (typeof data?.code === "string" && data.code) ||
+          (typeof data?.error_code === "string" && data.error_code) ||
+          response.statusText || undefined,
+      };
+    } catch {
+      const text = await response.text().catch(() => "");
+      return {
+        message: text || `Auth request failed (${response.status})`,
+        code: response.statusText || undefined,
+      };
+    }
+  };
+
+  const directAuthRequest = useCallback(async <T,>(path: string, body: Record<string, unknown>) => {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), AUTH_REQUEST_TIMEOUT_MS);
+
+    try {
+      const response = await fetch(`${AUTH_BASE_URL}${path}`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const parsed = await parseDirectAuthError(response);
+        const error = new Error(parsed.message);
+        if (parsed.code) error.name = parsed.code;
+        throw error;
+      }
+
+      return (await response.json()) as T;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        throw new Error("Auth request timed out.");
+      }
+
+      const parsed = parseError(error, "Auth request failed.");
+      throw Object.assign(new Error(parsed.message), parsed.code ? { name: parsed.code } : {});
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+  }, [authHeaders]);
+
+  const directForgotPassword = useCallback(async (email: string) => {
+    await directAuthRequest(`/recover?redirect_to=${encodeURIComponent(`${window.location.origin}/reset-password`)}`, {
+      email,
+      code_challenge: null,
+      code_challenge_method: null,
+      gotrue_meta_security: {},
+    });
+  }, [directAuthRequest]);
+
+  const directResendVerification = useCallback(async (email: string) => {
+    await directAuthRequest(`/resend?redirect_to=${encodeURIComponent(window.location.origin)}`, {
+      email,
+      type: "signup",
+      gotrue_meta_security: {},
+    });
+  }, [directAuthRequest]);
+
   const applySession = useCallback(async (session: Session | null | undefined) => {
     if (!session) return;
     const { error } = await supabase.auth.setSession({
@@ -178,6 +265,70 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
     if (error) throw error;
   }, []);
+
+  const directLogin = async (email: string, password: string) => {
+    const data = await directAuthRequest<{
+      access_token: string;
+      refresh_token: string;
+      token_type?: string;
+      expires_in: number;
+      expires_at?: number;
+      user: SupaUser;
+    }>("/token?grant_type=password", {
+      email,
+      password,
+      gotrue_meta_security: {},
+    });
+
+    const session: Session = {
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
+      token_type: "bearer",
+      expires_in: data.expires_in,
+      expires_at: data.expires_at,
+      user: data.user,
+    };
+
+    await applySession(session);
+    await syncAuthenticatedUser(session);
+    return session;
+  };
+
+  const directSignup = async (name: string, email: string, password: string) => {
+    const data = await directAuthRequest<{
+      access_token?: string;
+      refresh_token?: string;
+      token_type?: string;
+      expires_in?: number;
+      expires_at?: number;
+      user: SupaUser;
+    }>("/signup", {
+      email,
+      password,
+      data: { display_name: name },
+      gotrue_meta_security: {},
+      code_challenge: null,
+      code_challenge_method: null,
+    });
+
+    const hasSession = !!data.access_token && !!data.refresh_token;
+    if (!hasSession) {
+      return { session: null, user: data.user };
+    }
+
+    const session: Session = {
+      access_token: data.access_token!,
+      refresh_token: data.refresh_token!,
+      token_type: "bearer",
+      expires_in: data.expires_in || 3600,
+      expires_at: data.expires_at,
+      user: data.user,
+    };
+
+    await applySession(session);
+    await syncAuthenticatedUser(session);
+    return { session, user: data.user };
+  };
 
   const callAuthProxy = useCallback(async (action: "signup" | "login" | "forgot_password" | "resend_verification", payload: Record<string, unknown>) => {
     const { data, error } = await new Promise<Awaited<ReturnType<typeof supabase.functions.invoke>>>((resolve, reject) => {
