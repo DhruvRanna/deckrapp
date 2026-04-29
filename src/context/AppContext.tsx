@@ -518,11 +518,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
     } catch (error) {
       const parsed = parseError(error, "Login failed.");
+      const friendly = isTransportFailure(error)
+        ? "Network blocked in preview. Please open the published app to log in: https://deckrapp.lovable.app"
+        : parsed.message;
       return buildResult({
         ok: false,
         action: "login",
         email: normalizedEmail,
-        message: parsed.message,
+        message: friendly,
         transport: isPreviewAuthEnvironment() ? "proxy" : "client",
         startedAt,
         verificationRequired: /email not confirmed/i.test(parsed.message),
