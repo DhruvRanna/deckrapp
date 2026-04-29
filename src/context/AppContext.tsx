@@ -240,11 +240,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [authHeaders]);
 
+  const directForgotPassword = useCallback(async (email: string) => {
+    await directAuthRequest(`/recover?redirect_to=${encodeURIComponent(`${window.location.origin}/reset-password`)}`, {
+      email,
+      code_challenge: null,
+      code_challenge_method: null,
+      gotrue_meta_security: {},
+    });
+  }, [directAuthRequest]);
+
+  const directResendVerification = useCallback(async (email: string) => {
+    await directAuthRequest(`/resend?redirect_to=${encodeURIComponent(window.location.origin)}`, {
+      email,
+      type: "signup",
+      gotrue_meta_security: {},
+    });
+  }, [directAuthRequest]);
+
+  const applySession = useCallback(async (session: Session | null | undefined) => {
+    if (!session) return;
+    const { error } = await supabase.auth.setSession({
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+    });
+    if (error) throw error;
+  }, []);
+
   const directLogin = useCallback(async (email: string, password: string) => {
     const data = await directAuthRequest<{
       access_token: string;
       refresh_token: string;
-      token_type: string;
+      token_type?: string;
       expires_in: number;
       expires_at?: number;
       user: SupaUser;
@@ -257,7 +283,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const session: Session = {
       access_token: data.access_token,
       refresh_token: data.refresh_token,
-      token_type: data.token_type,
+      token_type: "bearer",
       expires_in: data.expires_in,
       expires_at: data.expires_at,
       user: data.user,
@@ -293,7 +319,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const session: Session = {
       access_token: data.access_token!,
       refresh_token: data.refresh_token!,
-      token_type: data.token_type || "bearer",
+      token_type: "bearer",
       expires_in: data.expires_in || 3600,
       expires_at: data.expires_at,
       user: data.user,
@@ -303,32 +329,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await syncAuthenticatedUser(session);
     return { session, user: data.user };
   }, [applySession, directAuthRequest, syncAuthenticatedUser]);
-
-  const directForgotPassword = useCallback(async (email: string) => {
-    await directAuthRequest(`/recover?redirect_to=${encodeURIComponent(`${window.location.origin}/reset-password`)}`, {
-      email,
-      code_challenge: null,
-      code_challenge_method: null,
-      gotrue_meta_security: {},
-    });
-  }, [directAuthRequest]);
-
-  const directResendVerification = useCallback(async (email: string) => {
-    await directAuthRequest(`/resend?redirect_to=${encodeURIComponent(window.location.origin)}`, {
-      email,
-      type: "signup",
-      gotrue_meta_security: {},
-    });
-  }, [directAuthRequest]);
-
-  const applySession = useCallback(async (session: Session | null | undefined) => {
-    if (!session) return;
-    const { error } = await supabase.auth.setSession({
-      access_token: session.access_token,
-      refresh_token: session.refresh_token,
-    });
-    if (error) throw error;
-  }, []);
 
   const callAuthProxy = useCallback(async (action: "signup" | "login" | "forgot_password" | "resend_verification", payload: Record<string, unknown>) => {
     const { data, error } = await new Promise<Awaited<ReturnType<typeof supabase.functions.invoke>>>((resolve, reject) => {
