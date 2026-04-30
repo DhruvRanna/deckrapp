@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import type { User as SupaUser, Session } from "@supabase/supabase-js";
 import { isPreviewAuthEnvironment } from "@/lib/authEnv";
 import type { AuthAction, AuthActionResult } from "@/lib/authTypes";
+import { setRevenueCatUser, logoutRevenueCat, getCurrentPlanFromRC, isNative as isNativePlatform } from "@/lib/revenuecat";
 
 const AUTH_BASE_URL = `${import.meta.env.VITE_SUPABASE_URL}/auth/v1`;
 const AUTH_API_VERSION = "2024-01-01";
