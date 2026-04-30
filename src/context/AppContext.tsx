@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import type { User as SupaUser, Session } from "@supabase/supabase-js";
 import { isPreviewAuthEnvironment } from "@/lib/authEnv";
 import type { AuthAction, AuthActionResult } from "@/lib/authTypes";
-import { setRevenueCatUser, logoutRevenueCat, getCurrentPlanFromRC, isNative as isNativePlatform } from "@/lib/revenuecat";
 
 const AUTH_BASE_URL = `${import.meta.env.VITE_SUPABASE_URL}/auth/v1`;
 const AUTH_API_VERSION = "2024-01-01";
@@ -434,19 +433,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAuthUser(session.user);
     try {
       await loadProfile(session.user.id);
-      // Sync RevenueCat user id (Android only — no-op on web)
-      if (isNativePlatform()) {
-        try {
-          await setRevenueCatUser(session.user.id);
-          const rcPlan = await getCurrentPlanFromRC();
-          if (rcPlan && rcPlan !== "FREE") {
-            await supabase.from("profiles").update({ plan: rcPlan }).eq("user_id", session.user.id);
-            await loadProfile(session.user.id);
-          }
-        } catch (e) {
-          console.warn("[RC] sync failed", e);
-        }
-      }
     } finally {
       setIsLoading(false);
     }
@@ -466,16 +452,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           loadProfile(session.user.id)
             .catch(e => console.warn("[auth] loadProfile error:", e))
             .finally(() => setIsLoading(false));
-          if (isNativePlatform()) {
-            setRevenueCatUser(session.user.id).catch(e => console.warn("[RC] login sync failed", e));
-          }
         }, 0);
       } else {
         setAuthUser(null);
         setUser(null);
         if (typeof window !== "undefined") window.__notificationsEnabled = true;
         setIsLoading(false);
-        logoutRevenueCat().catch(() => {});
       }
     });
 
@@ -488,9 +470,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           loadProfile(session.user.id)
             .catch(e => console.warn("[init] loadProfile error:", e))
             .finally(() => { if (!cancelled) setIsLoading(false); });
-          if (isNativePlatform()) {
-            setRevenueCatUser(session.user.id).catch(e => console.warn("[RC] init sync failed", e));
-          }
         } else {
           setIsLoading(false);
         }
