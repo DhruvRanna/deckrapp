@@ -466,12 +466,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           loadProfile(session.user.id)
             .catch(e => console.warn("[auth] loadProfile error:", e))
             .finally(() => setIsLoading(false));
+          if (isNativePlatform()) {
+            setRevenueCatUser(session.user.id).catch(e => console.warn("[RC] login sync failed", e));
+          }
         }, 0);
       } else {
         setAuthUser(null);
         setUser(null);
         if (typeof window !== "undefined") window.__notificationsEnabled = true;
         setIsLoading(false);
+        logoutRevenueCat().catch(() => {});
       }
     });
 
@@ -484,6 +488,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           loadProfile(session.user.id)
             .catch(e => console.warn("[init] loadProfile error:", e))
             .finally(() => { if (!cancelled) setIsLoading(false); });
+          if (isNativePlatform()) {
+            setRevenueCatUser(session.user.id).catch(e => console.warn("[RC] init sync failed", e));
+          }
         } else {
           setIsLoading(false);
         }
