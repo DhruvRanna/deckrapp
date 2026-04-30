@@ -434,6 +434,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAuthUser(session.user);
     try {
       await loadProfile(session.user.id);
+      // Sync RevenueCat user id (Android only — no-op on web)
+      if (isNativePlatform()) {
+        try {
+          await setRevenueCatUser(session.user.id);
+          const rcPlan = await getCurrentPlanFromRC();
+          if (rcPlan && rcPlan !== "FREE") {
+            await supabase.from("profiles").update({ plan: rcPlan }).eq("user_id", session.user.id);
+            await loadProfile(session.user.id);
+          }
+        } catch (e) {
+          console.warn("[RC] sync failed", e);
+        }
+      }
     } finally {
       setIsLoading(false);
     }
