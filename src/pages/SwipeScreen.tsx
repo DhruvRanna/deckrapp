@@ -219,8 +219,10 @@ const SwipeScreen: React.FC = () => {
     });
   }, [selectedNiche, user?.niches, user?.platforms]);
 
-  const loadIdeas = useCallback(async (options?: { niche?: string; reset?: boolean }) => {
-    if (!user || !authUser || loadingRef.current) return;
+  const loadIdeas = useCallback(async (options?: { niche?: string; reset?: boolean; background?: boolean }) => {
+    if (!user || !authUser) return;
+    // Allow background fetches to coexist with one another only if not already in flight.
+    if (loadingRef.current) return;
 
     const niche = options?.niche || activeNiche;
     if (!niche) return;
@@ -232,7 +234,7 @@ const SwipeScreen: React.FC = () => {
       const recentTitles = readRecentTitles(niche);
       // Direct fetch with hard timeout — supabase.functions.invoke can hang in preview proxy.
       const controller = new AbortController();
-      const timeoutId = window.setTimeout(() => controller.abort(), 9000);
+      const timeoutId = window.setTimeout(() => controller.abort(), 8000);
       let data: any = null;
       try {
         const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-ideas`;
@@ -253,32 +255,28 @@ const SwipeScreen: React.FC = () => {
         window.clearTimeout(timeoutId);
       }
 
-      if (data?.ideas?.length) {
-        const uniqueIdeas = dedupeIdeas(existingIdeas, data.ideas, recentTitles);
-        const nextIdeas = uniqueIdeas.length > 0 ? [...existingIdeas, ...uniqueIdeas] : existingIdeas;
+      // Use the LATEST ideas (might have been seeded with fallback while AI was fetching).
+      const baseIdeas = options?.reset ? [] : ideasRef.current;
 
-        if (nextIdeas.length > 0) {
+      if (data?.ideas?.length) {
+        const uniqueIdeas = dedupeIdeas(baseIdeas, data.ideas, recentTitles);
+        if (uniqueIdeas.length > 0) {
+          // Merge AI ideas into existing list — no flicker, just appended fresh cards.
+          const nextIdeas = [...baseIdeas, ...uniqueIdeas];
           setIdeas(nextIdeas);
-          if (options?.reset) setCurrentIndex(0);
-          persistCachedFeed(niche, nextIdeas, options?.reset ? 0 : currentIndexRef.current);
-          if (uniqueIdeas.length > 0) writeRecentTitles(niche, uniqueIdeas.map((idea) => idea.title));
+          persistCachedFeed(niche, nextIdeas, currentIndexRef.current);
+          writeRecentTitles(niche, uniqueIdeas.map((idea) => idea.title));
           return;
         }
+      }
 
+      // AI returned nothing new (or failed) — only seed fallback if we have NO ideas at all.
+      if (baseIdeas.length === 0) {
         const fallbackIdeas = dedupeIdeas([], getFallbackIdeas() as SwipeIdea[], recentTitles);
         setIdeas(fallbackIdeas);
         setCurrentIndex(0);
         persistCachedFeed(niche, fallbackIdeas, 0);
         if (fallbackIdeas.length > 0) writeRecentTitles(niche, fallbackIdeas.map((idea) => idea.title));
-      } else {
-        // Network blocked / AI down — show templates so user is never stuck on spinner.
-        if (existingIdeas.length === 0) {
-          const fallbackIdeas = dedupeIdeas([], getFallbackIdeas() as SwipeIdea[], recentTitles);
-          setIdeas(fallbackIdeas);
-          setCurrentIndex(0);
-          persistCachedFeed(niche, fallbackIdeas, 0);
-          if (fallbackIdeas.length > 0) writeRecentTitles(niche, fallbackIdeas.map((idea) => idea.title));
-        }
       }
     } catch {
       if (ideasRef.current.length === 0) {
@@ -297,19 +295,27 @@ const SwipeScreen: React.FC = () => {
     if (!user || !authUser || !activeNiche) return;
 
     const restored = restoreCachedFeed(activeNiche);
-    if (!restored) {
-      setIdeas([]);
-      setCurrentIndex(0);
-      loadIdeas({ niche: activeNiche, reset: true });
+    if (restored) {
+      const cached = readCachedFeed(activeNiche);
+      const remainingCards = (cached?.ideas.length || 0) - (cached?.currentIndex || 0);
+      if (remainingCards <= FEED_PREFETCH_THRESHOLD) {
+        loadIdeas({ niche: activeNiche, background: true });
+      }
       return;
     }
 
-    const cached = readCachedFeed(activeNiche);
-    const remainingCards = (cached?.ideas.length || 0) - (cached?.currentIndex || 0);
-    if (remainingCards <= FEED_PREFETCH_THRESHOLD) {
-      loadIdeas({ niche: activeNiche });
+    // No cache — seed instantly with deduped fallback so user sees cards immediately,
+    // then fetch fresh AI ideas in background and merge them in.
+    const recent = readRecentTitles(activeNiche);
+    const seed = dedupeIdeas([], getFallbackIdeas() as SwipeIdea[], recent);
+    if (seed.length > 0) {
+      setIdeas(seed);
+      setCurrentIndex(0);
+      persistCachedFeed(activeNiche, seed, 0);
+      writeRecentTitles(activeNiche, seed.map((idea) => idea.title));
     }
-  }, [activeNiche, authUser, loadIdeas, readCachedFeed, restoreCachedFeed, user]);
+    loadIdeas({ niche: activeNiche, background: true });
+  }, [activeNiche, authUser, getFallbackIdeas, loadIdeas, persistCachedFeed, readCachedFeed, readRecentTitles, restoreCachedFeed, user, writeRecentTitles]);
 
   useEffect(() => {
     if (!activeNiche || ideas.length === 0) return;
@@ -609,11 +615,25 @@ const SwipeScreen: React.FC = () => {
               )}
 
               {!idea && (
-                <div className="flex items-center justify-center rounded-[1.75rem] bg-card shadow-card-soft py-20 h-full">
-                  <div className="text-center">
-                    <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
-                    <p className="mt-4 text-sm text-muted-foreground">Loading content ideas...</p>
+                <div className="absolute inset-0 rounded-[1.75rem] bg-card shadow-card-soft p-5 flex flex-col gap-3 overflow-hidden">
+                  <div className="flex items-center justify-between">
+                    <div className="h-6 w-24 rounded-full bg-muted animate-pulse" />
+                    <div className="h-6 w-14 rounded-full bg-muted animate-pulse" />
                   </div>
+                  <div className="mt-2 h-7 w-5/6 rounded-md bg-muted animate-pulse" />
+                  <div className="h-7 w-3/4 rounded-md bg-muted animate-pulse" />
+                  <div className="mt-2 h-20 w-full rounded-2xl bg-muted animate-pulse" />
+                  <div className="flex gap-2 mt-1">
+                    <div className="h-5 w-16 rounded-full bg-muted animate-pulse" />
+                    <div className="h-5 w-20 rounded-full bg-muted animate-pulse" />
+                    <div className="h-5 w-14 rounded-full bg-muted animate-pulse" />
+                  </div>
+                  <div className="mt-auto grid grid-cols-3 gap-2">
+                    <div className="h-12 rounded-xl bg-muted animate-pulse" />
+                    <div className="h-12 rounded-xl bg-muted animate-pulse" />
+                    <div className="h-12 rounded-xl bg-muted animate-pulse" />
+                  </div>
+                  <div className="h-10 rounded-xl bg-muted animate-pulse" />
                 </div>
               )}
             </div>
