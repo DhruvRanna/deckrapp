@@ -85,7 +85,6 @@ const SwipeScreen: React.FC = () => {
   const [selectedNiche, setSelectedNiche] = useState<string>("");
   const ideasRef = useRef<SwipeIdea[]>([]);
   const currentIndexRef = useRef(0);
-  const hydratedNicheRef = useRef<string | null>(null);
 
   useEffect(() => {
     ideasRef.current = ideas;
@@ -270,6 +269,7 @@ const SwipeScreen: React.FC = () => {
         setIdeas(fallbackIdeas);
         setCurrentIndex(0);
         persistCachedFeed(niche, fallbackIdeas, 0);
+        if (fallbackIdeas.length > 0) writeRecentTitles(niche, fallbackIdeas.map((idea) => idea.title));
       } else {
         // Network blocked / AI down — show templates so user is never stuck on spinner.
         if (existingIdeas.length === 0) {
@@ -277,6 +277,7 @@ const SwipeScreen: React.FC = () => {
           setIdeas(fallbackIdeas);
           setCurrentIndex(0);
           persistCachedFeed(niche, fallbackIdeas, 0);
+          if (fallbackIdeas.length > 0) writeRecentTitles(niche, fallbackIdeas.map((idea) => idea.title));
         }
       }
     } catch {
@@ -285,6 +286,7 @@ const SwipeScreen: React.FC = () => {
         setIdeas(fallbackIdeas);
         setCurrentIndex(0);
         persistCachedFeed(niche, fallbackIdeas, 0);
+        if (fallbackIdeas.length > 0) writeRecentTitles(niche, fallbackIdeas.map((idea) => idea.title));
       }
     } finally {
       loadingRef.current = false;
@@ -295,8 +297,6 @@ const SwipeScreen: React.FC = () => {
     if (!user || !authUser || !activeNiche) return;
 
     const restored = restoreCachedFeed(activeNiche);
-    hydratedNicheRef.current = activeNiche;
-
     if (!restored) {
       setIdeas([]);
       setCurrentIndex(0);
@@ -319,7 +319,6 @@ const SwipeScreen: React.FC = () => {
   // Reset ideas when niche changes
   const handleNicheChange = (niche: string) => {
     if (niche === selectedNiche) return;
-    hydratedNicheRef.current = null;
     setSelectedNiche(niche);
     loadingRef.current = false;
   };
