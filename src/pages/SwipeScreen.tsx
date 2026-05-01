@@ -36,10 +36,41 @@ const tagIcon = (label: string) => {
   return Hash;
 };
 
+type SwipeIdea = ContentIdea & { thumbnailIdea?: string };
+type SwipeFeedCache = {
+  ideas: SwipeIdea[];
+  currentIndex: number;
+  selectedNiche: string;
+  updatedAt: number;
+};
+
+const FEED_CACHE_TTL_MS = 1000 * 60 * 20;
+const FEED_PREFETCH_THRESHOLD = 4;
+const MAX_RECENT_TITLES = 80;
+const swipeFeedMemoryCache = new Map<string, SwipeFeedCache>();
+
+const normalizeIdeaTitle = (title: string) => title.trim().toLowerCase().replace(/\s+/g, " ");
+const feedCacheKey = (userId: string, niche: string) => `deckr_swipe_feed_${userId}_${niche.toLowerCase().replace(/\s+/g, "-")}`;
+const seenTitlesKey = (userId: string, niche: string) => `deckr_seen_titles_${userId}_${niche.toLowerCase().replace(/\s+/g, "-")}`;
+
+const dedupeIdeas = (existing: SwipeIdea[], incoming: SwipeIdea[], blockedTitles: string[] = []) => {
+  const seen = new Set([
+    ...existing.map((idea) => normalizeIdeaTitle(idea.title)),
+    ...blockedTitles.map((title) => normalizeIdeaTitle(title)),
+  ]);
+
+  return incoming.filter((idea) => {
+    const normalized = normalizeIdeaTitle(idea.title);
+    if (!normalized || seen.has(normalized)) return false;
+    seen.add(normalized);
+    return true;
+  });
+};
+
 const SwipeScreen: React.FC = () => {
   const { user, authUser, saveIdea, incrementSwipe, canSwipe, canGenerateScript, refreshData } = useApp();
   const navigate = useNavigate();
-  const [ideas, setIdeas] = useState<(ContentIdea & { thumbnailIdea?: string })[]>([]);
+  const [ideas, setIdeas] = useState<SwipeIdea[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [animClass, setAnimClass] = useState("");
   const [stampVisible, setStampVisible] = useState<"save" | "skip" | "script" | null>(null);
@@ -51,8 +82,18 @@ const SwipeScreen: React.FC = () => {
   const touchRef = useRef<{ x: number; y: number } | null>(null);
   const [dragDelta, setDragDelta] = useState({ x: 0, y: 0 });
   const loadingRef = useRef(false);
-  const [initialLoaded, setInitialLoaded] = useState(false);
   const [selectedNiche, setSelectedNiche] = useState<string>("");
+  const ideasRef = useRef<SwipeIdea[]>([]);
+  const currentIndexRef = useRef(0);
+  const hydratedNicheRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    ideasRef.current = ideas;
+  }, [ideas]);
+
+  useEffect(() => {
+    currentIndexRef.current = currentIndex;
+  }, [currentIndex]);
 
   useEffect(() => {
     if (!authUser) return;
@@ -69,6 +110,75 @@ const SwipeScreen: React.FC = () => {
       setSelectedNiche(user.niches[0]);
     }
   }, [user?.niches, selectedNiche]);
+
+  const activeNiche = selectedNiche || user?.niches[0] || "";
+
+  const readRecentTitles = useCallback((niche: string) => {
+    if (!authUser || typeof window === "undefined") return [] as string[];
+
+    try {
+      const raw = localStorage.getItem(seenTitlesKey(authUser.id, niche));
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === "string") : [];
+    } catch {
+      return [];
+    }
+  }, [authUser]);
+
+  const writeRecentTitles = useCallback((niche: string, titles: string[]) => {
+    if (!authUser || typeof window === "undefined") return;
+    const merged = Array.from(new Set([...readRecentTitles(niche), ...titles].map(normalizeIdeaTitle))).slice(-MAX_RECENT_TITLES);
+    localStorage.setItem(seenTitlesKey(authUser.id, niche), JSON.stringify(merged));
+  }, [authUser, readRecentTitles]);
+
+  const readCachedFeed = useCallback((niche: string): SwipeFeedCache | null => {
+    if (!authUser || typeof window === "undefined") return null;
+
+    const key = feedCacheKey(authUser.id, niche);
+    const memoryCached = swipeFeedMemoryCache.get(key);
+    if (memoryCached && Date.now() - memoryCached.updatedAt < FEED_CACHE_TTL_MS) {
+      return memoryCached;
+    }
+
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as SwipeFeedCache;
+      if (!parsed?.ideas?.length || Date.now() - parsed.updatedAt >= FEED_CACHE_TTL_MS) {
+        localStorage.removeItem(key);
+        swipeFeedMemoryCache.delete(key);
+        return null;
+      }
+      swipeFeedMemoryCache.set(key, parsed);
+      return parsed;
+    } catch {
+      return null;
+    }
+  }, [authUser]);
+
+  const persistCachedFeed = useCallback((niche: string, nextIdeas: SwipeIdea[], nextIndex: number) => {
+    if (!authUser || typeof window === "undefined" || !niche || nextIdeas.length === 0) return;
+
+    const payload: SwipeFeedCache = {
+      ideas: nextIdeas,
+      currentIndex: Math.min(nextIndex, Math.max(nextIdeas.length - 1, 0)),
+      selectedNiche: niche,
+      updatedAt: Date.now(),
+    };
+
+    const key = feedCacheKey(authUser.id, niche);
+    swipeFeedMemoryCache.set(key, payload);
+    localStorage.setItem(key, JSON.stringify(payload));
+  }, [authUser]);
+
+  const restoreCachedFeed = useCallback((niche: string) => {
+    const cached = readCachedFeed(niche);
+    if (!cached) return false;
+
+    setIdeas(cached.ideas);
+    setCurrentIndex(Math.min(cached.currentIndex, Math.max(cached.ideas.length - 1, 0)));
+    return true;
+  }, [readCachedFeed]);
 
   const getFallbackIdeas = useCallback((): ContentIdea[] => {
     const niche = selectedNiche || user?.niches[0] || "General";
@@ -110,12 +220,17 @@ const SwipeScreen: React.FC = () => {
     });
   }, [selectedNiche, user?.niches, user?.platforms]);
 
-  const loadIdeas = useCallback(async () => {
-    if (!user || loadingRef.current) return;
+  const loadIdeas = useCallback(async (options?: { niche?: string; reset?: boolean }) => {
+    if (!user || !authUser || loadingRef.current) return;
+
+    const niche = options?.niche || activeNiche;
+    if (!niche) return;
+
     loadingRef.current = true;
-    const niche = selectedNiche || user.niches[0] || "General";
+
     try {
-      const recentTitles = ideas.slice(-30).map(i => i.title);
+      const existingIdeas = options?.reset ? [] : ideasRef.current;
+      const recentTitles = readRecentTitles(niche);
       // Direct fetch with hard timeout — supabase.functions.invoke can hang in preview proxy.
       const controller = new AbortController();
       const timeoutId = window.setTimeout(() => controller.abort(), 9000);
@@ -129,7 +244,7 @@ const SwipeScreen: React.FC = () => {
             apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ niches: [niche], platforms: user.platforms, count: 10, recentTitles }),
+          body: JSON.stringify({ niches: [niche], platforms: user.platforms, count: 12, recentTitles }),
           signal: controller.signal,
         });
         if (resp.ok) data = await resp.json();
@@ -140,39 +255,74 @@ const SwipeScreen: React.FC = () => {
       }
 
       if (data?.ideas?.length) {
-        setIdeas(prev => [...prev, ...data.ideas]);
+        const uniqueIdeas = dedupeIdeas(existingIdeas, data.ideas, recentTitles);
+        const nextIdeas = uniqueIdeas.length > 0 ? [...existingIdeas, ...uniqueIdeas] : existingIdeas;
+
+        if (nextIdeas.length > 0) {
+          setIdeas(nextIdeas);
+          if (options?.reset) setCurrentIndex(0);
+          persistCachedFeed(niche, nextIdeas, options?.reset ? 0 : currentIndexRef.current);
+          if (uniqueIdeas.length > 0) writeRecentTitles(niche, uniqueIdeas.map((idea) => idea.title));
+          return;
+        }
+
+        const fallbackIdeas = dedupeIdeas([], getFallbackIdeas() as SwipeIdea[], recentTitles);
+        setIdeas(fallbackIdeas);
+        setCurrentIndex(0);
+        persistCachedFeed(niche, fallbackIdeas, 0);
       } else {
         // Network blocked / AI down — show templates so user is never stuck on spinner.
-        setIdeas(prev => prev.length === 0 ? getFallbackIdeas() : prev);
+        if (existingIdeas.length === 0) {
+          const fallbackIdeas = dedupeIdeas([], getFallbackIdeas() as SwipeIdea[], recentTitles);
+          setIdeas(fallbackIdeas);
+          setCurrentIndex(0);
+          persistCachedFeed(niche, fallbackIdeas, 0);
+        }
       }
     } catch {
-      setIdeas(prev => prev.length === 0 ? getFallbackIdeas() : prev);
+      if (ideasRef.current.length === 0) {
+        const fallbackIdeas = dedupeIdeas([], getFallbackIdeas() as SwipeIdea[], readRecentTitles(niche));
+        setIdeas(fallbackIdeas);
+        setCurrentIndex(0);
+        persistCachedFeed(niche, fallbackIdeas, 0);
+      }
     } finally {
       loadingRef.current = false;
     }
-  }, [user, selectedNiche, getFallbackIdeas, ideas]);
+  }, [activeNiche, authUser, getFallbackIdeas, persistCachedFeed, readRecentTitles, user, writeRecentTitles]);
 
   useEffect(() => {
-    if (user && !initialLoaded) {
-      setInitialLoaded(true);
-      loadIdeas();
+    if (!user || !authUser || !activeNiche) return;
+
+    const restored = restoreCachedFeed(activeNiche);
+    hydratedNicheRef.current = activeNiche;
+
+    if (!restored) {
+      setIdeas([]);
+      setCurrentIndex(0);
+      loadIdeas({ niche: activeNiche, reset: true });
+      return;
     }
-  }, [user, initialLoaded, loadIdeas]);
+
+    const cached = readCachedFeed(activeNiche);
+    const remainingCards = (cached?.ideas.length || 0) - (cached?.currentIndex || 0);
+    if (remainingCards <= FEED_PREFETCH_THRESHOLD) {
+      loadIdeas({ niche: activeNiche });
+    }
+  }, [activeNiche, authUser, loadIdeas, readCachedFeed, restoreCachedFeed, user]);
+
+  useEffect(() => {
+    if (!activeNiche || ideas.length === 0) return;
+    persistCachedFeed(activeNiche, ideas, currentIndex);
+  }, [activeNiche, currentIndex, ideas, persistCachedFeed]);
 
   // Reset ideas when niche changes
   const handleNicheChange = (niche: string) => {
     if (niche === selectedNiche) return;
+    hydratedNicheRef.current = null;
     setSelectedNiche(niche);
-    setIdeas([]);
-    setCurrentIndex(0);
     loadingRef.current = false;
   };
-
-  useEffect(() => {
-    if (selectedNiche && initialLoaded) {
-      loadIdeas();
-    }
-  }, [selectedNiche]);
 
   const idea = currentIndex < ideas.length ? ideas[currentIndex] : null;
   const nextIdea = currentIndex + 1 < ideas.length ? ideas[currentIndex + 1] : null;
