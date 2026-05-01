@@ -615,11 +615,25 @@ const SwipeScreen: React.FC = () => {
               )}
 
               {!idea && (
-                <div className="flex items-center justify-center rounded-[1.75rem] bg-card shadow-card-soft py-20 h-full">
-                  <div className="text-center">
-                    <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
-                    <p className="mt-4 text-sm text-muted-foreground">Loading content ideas...</p>
+                <div className="absolute inset-0 rounded-[1.75rem] bg-card shadow-card-soft p-5 flex flex-col gap-3 overflow-hidden">
+                  <div className="flex items-center justify-between">
+                    <div className="h-6 w-24 rounded-full bg-muted animate-pulse" />
+                    <div className="h-6 w-14 rounded-full bg-muted animate-pulse" />
                   </div>
+                  <div className="mt-2 h-7 w-5/6 rounded-md bg-muted animate-pulse" />
+                  <div className="h-7 w-3/4 rounded-md bg-muted animate-pulse" />
+                  <div className="mt-2 h-20 w-full rounded-2xl bg-muted animate-pulse" />
+                  <div className="flex gap-2 mt-1">
+                    <div className="h-5 w-16 rounded-full bg-muted animate-pulse" />
+                    <div className="h-5 w-20 rounded-full bg-muted animate-pulse" />
+                    <div className="h-5 w-14 rounded-full bg-muted animate-pulse" />
+                  </div>
+                  <div className="mt-auto grid grid-cols-3 gap-2">
+                    <div className="h-12 rounded-xl bg-muted animate-pulse" />
+                    <div className="h-12 rounded-xl bg-muted animate-pulse" />
+                    <div className="h-12 rounded-xl bg-muted animate-pulse" />
+                  </div>
+                  <div className="h-10 rounded-xl bg-muted animate-pulse" />
                 </div>
               )}
             </div>
