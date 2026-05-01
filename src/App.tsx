@@ -26,10 +26,37 @@ import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const FullScreenLoader = () => (
+  <div className="flex h-screen items-center justify-center">
+    <div className="h-8 w-8 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+  </div>
+);
+
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useApp();
-  if (isLoading) return <div className="flex h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-foreground border-t-transparent" /></div>;
+  if (isLoading) return <FullScreenLoader />;
   if (!isAuthenticated) return <Navigate to="/auth" replace />;
+  return <>{children}</>;
+};
+
+const GuestEntryRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, hasCompletedOnboarding, isLoading } = useApp();
+
+  if (isLoading) return <FullScreenLoader />;
+  if (isAuthenticated) {
+    return <Navigate to={hasCompletedOnboarding ? "/swipe" : "/onboarding/niche"} replace />;
+  }
+
+  return <>{children}</>;
+};
+
+const OnboardingRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, hasCompletedOnboarding, isLoading } = useApp();
+
+  if (isLoading) return <FullScreenLoader />;
+  if (!isAuthenticated) return <Navigate to="/auth" replace />;
+  if (hasCompletedOnboarding) return <Navigate to="/swipe" replace />;
+
   return <>{children}</>;
 };
 
@@ -56,16 +83,16 @@ const App = () => (
           <div className="mx-auto max-w-md min-h-screen">
             <Routes>
               <Route path="/" element={<SplashScreen />} />
-              <Route path="/welcome" element={<WelcomeScreen />} />
-              <Route path="/onboarding/scripts-intro" element={<ScriptsIntroScreen />} />
-              <Route path="/onboarding/calendar-intro" element={<CalendarIntroScreen />} />
+              <Route path="/welcome" element={<GuestEntryRoute><WelcomeScreen /></GuestEntryRoute>} />
+              <Route path="/onboarding/scripts-intro" element={<GuestEntryRoute><ScriptsIntroScreen /></GuestEntryRoute>} />
+              <Route path="/onboarding/calendar-intro" element={<GuestEntryRoute><CalendarIntroScreen /></GuestEntryRoute>} />
               <Route path="/tutorial" element={<TutorialScreen />} />
-              <Route path="/auth" element={<AuthScreen />} />
+              <Route path="/auth" element={<GuestEntryRoute><AuthScreen /></GuestEntryRoute>} />
               <Route path="/auth/diagnostics" element={<AuthDiagnosticsScreen />} />
               <Route path="/reset-password" element={<ResetPasswordScreen />} />
-              <Route path="/onboarding/niche" element={<OnboardingScreen step="niche" />} />
-              <Route path="/onboarding/platform" element={<OnboardingScreen step="platform" />} />
-              <Route path="/onboarding/frequency" element={<OnboardingScreen step="frequency" />} />
+              <Route path="/onboarding/niche" element={<OnboardingRoute><OnboardingScreen step="niche" /></OnboardingRoute>} />
+              <Route path="/onboarding/platform" element={<OnboardingRoute><OnboardingScreen step="platform" /></OnboardingRoute>} />
+              <Route path="/onboarding/frequency" element={<OnboardingRoute><OnboardingScreen step="frequency" /></OnboardingRoute>} />
               <Route path="/swipe" element={<ProtectedRoute><SwipeScreen /></ProtectedRoute>} />
               <Route path="/calendar" element={<ProtectedRoute><CalendarScreen /></ProtectedRoute>} />
               <Route path="/scripts" element={<ProtectedRoute><ScriptsScreen /></ProtectedRoute>} />
