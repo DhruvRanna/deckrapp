@@ -330,9 +330,9 @@ const SwipeScreen: React.FC = () => {
     if (!activeNiche || ideas.length === 0) return;
 
     // Look at the next ~8 cards the user will see and find ones missing media.
-    const window = ideas.slice(currentIndex, currentIndex + 8);
+    const upcoming = ideas.slice(currentIndex, currentIndex + 8);
     const missingByPlatform = new Map<string, number[]>(); // platform -> indices (relative to full ideas[])
-    window.forEach((it, i) => {
+    upcoming.forEach((it, i) => {
       if (it.thumbnailUrl || it.mediaUrl) return;
       const p = (it.platform || "").toLowerCase();
       // Skip platforms our scrapers don't support reliably yet (Twitter/X uses async tasks).
