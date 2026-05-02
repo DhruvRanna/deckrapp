@@ -38,6 +38,13 @@ export interface ContentIdea {
   color: string;
   scheduledDate?: string;
   trending?: boolean;
+  // Optional real-world media pulled from social scrapers — shows on the card
+  // so users see what viral content actually looks like for this niche/platform.
+  mediaUrl?: string;
+  mediaType?: "image" | "video";
+  thumbnailUrl?: string;
+  sourceUrl?: string;
+  sourceAuthor?: string;
 }
 
 export interface GeneratedScript {
