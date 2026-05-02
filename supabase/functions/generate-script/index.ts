@@ -60,11 +60,11 @@ serve(async (req) => {
   try {
     const { title, platform, hook, duration, niche } = await req.json();
 
-    const systemPrompt = `You are a professional content script writer and social media strategist. Generate engaging, platform-optimized scripts with complete creator resources.
+    const postKind = isTextPostPlatform(platform);
 
-Return these fields via the tool call:
+    const videoSpec = `Return these fields via the tool call:
 - hookText: opening hook (first 3 seconds)
-- bodyText: main script body with [OPEN], [MIDDLE], [CLOSE] sections and scene directions
+- bodyText: main script body with [OPEN], [MIDDLE], [CLOSE] sections and scene directions (min 400 chars)
 - ctaText: compelling call-to-action
 - deliveryTip: camera/delivery advice
 - hashtags: 8-12 relevant trending hashtags (without # symbol)
@@ -73,11 +73,43 @@ Return these fields via the tool call:
 
 Tone: energetic, authentic, optimized for ${platform}. Duration: ${duration}. Niche: ${niche}. Make this script feel UNIQUE — not generic.`;
 
+    const linkedinSpec = `You are writing a READY-TO-POST LinkedIn post for a ${niche} creator. This is NOT a video script. Do NOT use [OPEN]/[MIDDLE]/[CLOSE] tags, scene directions, camera tips, or "stop scrolling" language.
+
+Return via tool call:
+- hookText: a scroll-stopping first line (under 120 chars) — bold claim, contrarian take, or curiosity gap
+- bodyText: the FULL ready-to-paste LinkedIn post (300–800 chars). Use SHORT paragraphs (1–2 lines), generous line breaks for mobile, max 1–2 emojis, structured with a hook → insight → 3 short points/story → takeaway → open question. Plain text only — no markdown, no [tags].
+- ctaText: an open-ended question that drives comments
+- deliveryTip: LinkedIn-specific posting advice (timing, format, why it works on the LinkedIn algorithm — NO camera advice)
+- hashtags: 5–8 professional LinkedIn hashtags (without # symbol)
+- thumbnailIdea: optional carousel/image cover idea (or empty string if not needed)
+- captionIdea: same as bodyText (the post itself, ready to paste)
+
+Niche: ${niche}. Make it sound human, specific, and valuable — not corporate fluff.`;
+
+    const twitterSpec = `You are writing a READY-TO-POST tweet (or short thread) for a ${niche} creator on X/Twitter. This is NOT a video script. Do NOT use [OPEN]/[MIDDLE]/[CLOSE] tags, scene directions, or camera tips.
+
+Return via tool call:
+- hookText: the first tweet (≤ 270 chars) — must stop the scroll. Bold claim, stat, or contrarian take.
+- bodyText: the FULL ready-to-paste post. If it fits in 280 chars, return ONE punchy tweet. Otherwise return a thread formatted as "1/ ...\\n\\n2/ ...\\n\\n3/ ..." where each numbered tweet is ≤ 270 chars. Plain text, no markdown.
+- ctaText: a short final-tweet CTA (RT/follow/reply prompt)
+- deliveryTip: X-specific advice (best time, why threads vs single, no hashtags inside post — they hurt reach)
+- hashtags: 2–4 ONLY (without #), to be used in profile/search context — NOT inside the tweet
+- thumbnailIdea: optional image/quote-card idea (or empty string)
+- captionIdea: same as bodyText (the tweet/thread itself, ready to paste)
+
+Niche: ${niche}. Be sharp, opinionated, useful. No fluff.`;
+
+    const systemPrompt = postKind === "linkedin" ? linkedinSpec : postKind === "twitter" ? twitterSpec : `You are a professional content script writer and social media strategist. Generate engaging, platform-optimized scripts with complete creator resources.\n\n${videoSpec}`;
+
     try {
+      const userPrompt = postKind
+        ? `Write a ready-to-post ${postKind === "linkedin" ? "LinkedIn post" : "X/Twitter post or short thread"} for:\nTitle: "${title}"\nHook idea: "${hook}"\nNiche: ${niche}\n\nThe bodyText MUST be the actual post copy the user can paste directly into ${postKind === "linkedin" ? "LinkedIn" : "X"} — no script tags, no scene directions, no camera advice.`
+        : `Generate a complete script and creator resources for:\nTitle: "${title}"\nHook: "${hook}"\nPlatform: ${platform}\nNiche: ${niche}\nDuration: ${duration}\n\nIMPORTANT: bodyText MUST be a detailed multi-paragraph script (at least 400 characters) with [OPEN], [MIDDLE], [CLOSE] sections, scene directions, and concrete value. Never return an empty or one-line body.`;
+
       const script = await generateWithFallback({
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Generate a complete script and creator resources for:\nTitle: "${title}"\nHook: "${hook}"\nPlatform: ${platform}\nNiche: ${niche}\nDuration: ${duration}\n\nIMPORTANT: bodyText MUST be a detailed multi-paragraph script (at least 400 characters) with [OPEN], [MIDDLE], [CLOSE] sections, scene directions, and concrete value. Never return an empty or one-line body.` },
+          { role: "user", content: userPrompt },
         ],
         tool: {
           name: "generate_script",
