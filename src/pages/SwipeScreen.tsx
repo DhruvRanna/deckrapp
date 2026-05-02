@@ -322,6 +322,93 @@ const SwipeScreen: React.FC = () => {
     persistCachedFeed(activeNiche, ideas, currentIndex);
   }, [activeNiche, currentIndex, ideas, persistCachedFeed]);
 
+  // Enrich upcoming cards with REAL social-platform media (videos/thumbnails) so the
+  // swipe feed feels alive — pulled from RapidAPI scrapers per platform + niche.
+  // Runs in background, never blocks card rendering, and only fetches per (niche, platform) once per session.
+  const mediaFetchedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!activeNiche || ideas.length === 0) return;
+
+    // Look at the next ~8 cards the user will see and find ones missing media.
+    const window = ideas.slice(currentIndex, currentIndex + 8);
+    const missingByPlatform = new Map<string, number[]>(); // platform -> indices (relative to full ideas[])
+    window.forEach((it, i) => {
+      if (it.thumbnailUrl || it.mediaUrl) return;
+      const p = (it.platform || "").toLowerCase();
+      // Skip platforms our scrapers don't support reliably yet (Twitter/X uses async tasks).
+      if (!p || p.includes("twitter") || p === "x") return;
+      const arr = missingByPlatform.get(it.platform) || [];
+      arr.push(currentIndex + i);
+      missingByPlatform.set(it.platform, arr);
+    });
+    if (missingByPlatform.size === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      const updates: Array<{ idx: number; patch: Partial<SwipeIdea> }> = [];
+      await Promise.all(
+        Array.from(missingByPlatform.entries()).map(async ([platform, indices]) => {
+          const cacheKey = `${activeNiche}|${platform}`;
+          if (mediaFetchedRef.current.has(cacheKey)) return;
+          mediaFetchedRef.current.add(cacheKey);
+
+          try {
+            const ctrl = new AbortController();
+            const t = window.setTimeout(() => ctrl.abort(), 10000);
+            const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fetch-trending-media`;
+            const resp = await fetch(url, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+              },
+              body: JSON.stringify({ platform, niche: activeNiche, count: indices.length + 2 }),
+              signal: ctrl.signal,
+            });
+            window.clearTimeout(t);
+            if (!resp.ok) return;
+            const data = await resp.json();
+            const items: Array<any> = Array.isArray(data?.items) ? data.items : [];
+            indices.forEach((ideaIdx, n) => {
+              const m = items[n];
+              if (!m || !m.thumbnailUrl) return;
+              updates.push({
+                idx: ideaIdx,
+                patch: {
+                  mediaUrl: m.mediaUrl || m.thumbnailUrl,
+                  mediaType: m.mediaType === "video" ? "video" : "image",
+                  thumbnailUrl: m.thumbnailUrl,
+                  sourceUrl: m.sourceUrl,
+                  sourceAuthor: m.author,
+                },
+              });
+            });
+          } catch (err) {
+            console.warn("[fetch-trending-media] failed for", platform, err);
+          }
+        })
+      );
+
+      if (cancelled || updates.length === 0) return;
+      setIdeas((prev) => {
+        const next = [...prev];
+        updates.forEach(({ idx, patch }) => {
+          if (next[idx]) next[idx] = { ...next[idx], ...patch };
+        });
+        return next;
+      });
+    })();
+
+    return () => { cancelled = true; };
+    // Re-run when ideas grow or user advances; mediaFetchedRef prevents duplicate calls per (niche,platform).
+  }, [activeNiche, ideas.length, currentIndex]);
+
+  // Reset the per-platform media cache when niche changes so we fetch niche-relevant media.
+  useEffect(() => {
+    mediaFetchedRef.current = new Set();
+  }, [activeNiche]);
+
   // Reset ideas when niche changes
   const handleNicheChange = (niche: string) => {
     if (niche === selectedNiche) return;
