@@ -634,6 +634,38 @@ const SwipeScreen: React.FC = () => {
                         {idea.title}
                       </h2>
 
+                      {/* Real social media preview (image/video thumbnail from scraped trending content) */}
+                      {idea.thumbnailUrl && (
+                        <a
+                          href={idea.sourceUrl || idea.thumbnailUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onTouchStart={(e) => e.stopPropagation()}
+                          className="relative block overflow-hidden rounded-2xl bg-black/10 aspect-[16/10] group"
+                        >
+                          <img
+                            src={idea.thumbnailUrl}
+                            alt={idea.title}
+                            loading="lazy"
+                            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                            onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = "none"; }}
+                          />
+                          {idea.mediaType === "video" && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/40 to-transparent">
+                              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/95 shadow-lg">
+                                <Play className="h-5 w-5 fill-black text-black ml-0.5" />
+                              </span>
+                            </div>
+                          )}
+                          {idea.sourceAuthor && (
+                            <span className="absolute bottom-1.5 left-1.5 rounded-md bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+                              @{idea.sourceAuthor}
+                            </span>
+                          )}
+                        </a>
+                      )}
+
                       {/* Hook */}
                       <div className="t-surface rounded-2xl px-4 py-3">
                         <p className="text-[10px] font-bold tracking-[0.25em] t-primary">HOOK</p>
