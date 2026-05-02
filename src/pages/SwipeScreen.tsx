@@ -322,93 +322,6 @@ const SwipeScreen: React.FC = () => {
     persistCachedFeed(activeNiche, ideas, currentIndex);
   }, [activeNiche, currentIndex, ideas, persistCachedFeed]);
 
-  // Enrich upcoming cards with REAL social-platform media (videos/thumbnails) so the
-  // swipe feed feels alive — pulled from RapidAPI scrapers per platform + niche.
-  // Runs in background, never blocks card rendering, and only fetches per (niche, platform) once per session.
-  const mediaFetchedRef = useRef<Set<string>>(new Set());
-  useEffect(() => {
-    if (!activeNiche || ideas.length === 0) return;
-
-    // Look at the next ~8 cards the user will see and find ones missing media.
-    const upcoming = ideas.slice(currentIndex, currentIndex + 8);
-    const missingByPlatform = new Map<string, number[]>(); // platform -> indices (relative to full ideas[])
-    upcoming.forEach((it, i) => {
-      if (it.thumbnailUrl || it.mediaUrl) return;
-      const p = (it.platform || "").toLowerCase();
-      // Skip platforms our scrapers don't support reliably yet (Twitter/X uses async tasks).
-      if (!p || p.includes("twitter") || p === "x") return;
-      const arr = missingByPlatform.get(it.platform) || [];
-      arr.push(currentIndex + i);
-      missingByPlatform.set(it.platform, arr);
-    });
-    if (missingByPlatform.size === 0) return;
-
-    let cancelled = false;
-    (async () => {
-      const updates: Array<{ idx: number; patch: Partial<SwipeIdea> }> = [];
-      await Promise.all(
-        Array.from(missingByPlatform.entries()).map(async ([platform, indices]) => {
-          const cacheKey = `${activeNiche}|${platform}`;
-          if (mediaFetchedRef.current.has(cacheKey)) return;
-          mediaFetchedRef.current.add(cacheKey);
-
-          try {
-            const ctrl = new AbortController();
-            const t = window.setTimeout(() => ctrl.abort(), 10000);
-            const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fetch-trending-media`;
-            const resp = await fetch(url, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-                Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-              },
-              body: JSON.stringify({ platform, niche: activeNiche, count: indices.length + 2 }),
-              signal: ctrl.signal,
-            });
-            window.clearTimeout(t);
-            if (!resp.ok) return;
-            const data = await resp.json();
-            const items: Array<any> = Array.isArray(data?.items) ? data.items : [];
-            indices.forEach((ideaIdx, n) => {
-              const m = items[n];
-              if (!m || !m.thumbnailUrl) return;
-              updates.push({
-                idx: ideaIdx,
-                patch: {
-                  mediaUrl: m.mediaUrl || m.thumbnailUrl,
-                  mediaType: m.mediaType === "video" ? "video" : "image",
-                  thumbnailUrl: m.thumbnailUrl,
-                  sourceUrl: m.sourceUrl,
-                  sourceAuthor: m.author,
-                },
-              });
-            });
-          } catch (err) {
-            console.warn("[fetch-trending-media] failed for", platform, err);
-          }
-        })
-      );
-
-      if (cancelled || updates.length === 0) return;
-      setIdeas((prev) => {
-        const next = [...prev];
-        updates.forEach(({ idx, patch }) => {
-          if (next[idx]) next[idx] = { ...next[idx], ...patch };
-        });
-        return next;
-      });
-    })();
-
-    return () => { cancelled = true; };
-    // Re-run when ideas grow or user advances; mediaFetchedRef prevents duplicate calls per (niche,platform).
-  }, [activeNiche, ideas.length, currentIndex]);
-
-  // Reset the per-platform media cache when niche changes so we fetch niche-relevant media.
-  useEffect(() => {
-    mediaFetchedRef.current = new Set();
-  }, [activeNiche]);
-
   // Reset ideas when niche changes
   const handleNicheChange = (niche: string) => {
     if (niche === selectedNiche) return;
@@ -633,38 +546,6 @@ const SwipeScreen: React.FC = () => {
                       <h2 className="text-[1.45rem] font-black italic leading-[1.15] tracking-[-0.02em] text-black">
                         {idea.title}
                       </h2>
-
-                      {/* Real social media preview (image/video thumbnail from scraped trending content) */}
-                      {idea.thumbnailUrl && (
-                        <a
-                          href={idea.sourceUrl || idea.thumbnailUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onPointerDown={(e) => e.stopPropagation()}
-                          onTouchStart={(e) => e.stopPropagation()}
-                          className="relative block overflow-hidden rounded-2xl bg-black/10 aspect-[16/10] group"
-                        >
-                          <img
-                            src={idea.thumbnailUrl}
-                            alt={idea.title}
-                            loading="lazy"
-                            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                            onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = "none"; }}
-                          />
-                          {idea.mediaType === "video" && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/40 to-transparent">
-                              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/95 shadow-lg">
-                                <Play className="h-5 w-5 fill-black text-black ml-0.5" />
-                              </span>
-                            </div>
-                          )}
-                          {idea.sourceAuthor && (
-                            <span className="absolute bottom-1.5 left-1.5 rounded-md bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
-                              @{idea.sourceAuthor}
-                            </span>
-                          )}
-                        </a>
-                      )}
 
                       {/* Hook */}
                       <div className="t-surface rounded-2xl px-4 py-3">
