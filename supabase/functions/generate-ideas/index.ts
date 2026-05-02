@@ -67,11 +67,15 @@ VARIETY SEEDS (mix these angles): ${seedAngles}
 FORMATS to mix: ${seedFormats}
 Session seed (use to ensure novelty): ${sessionSeed}
 
-PLATFORM TITLE LENGTH:
-- YouTube long-form: 8-15 words, descriptive, SEO-friendly
-- YouTube Shorts: 5-8 words, punchy
-- TikTok: 4-7 words, scroll-stopping
-- Instagram Reels: 5-8 words, aesthetic
+PLATFORM TITLE LENGTH & FORMAT:
+- YouTube long-form: 8-15 words, descriptive, SEO-friendly (video)
+- YouTube Shorts: 5-8 words, punchy (short video)
+- TikTok: 4-7 words, scroll-stopping (short video)
+- Instagram Reels: 5-8 words, aesthetic (short video)
+- LinkedIn: TEXT POST topic (8-14 words). Frame as a professional insight, contrarian take, lesson, or story angle — NOT a video title. Example: "The hiring red flag most ${nicheStr} founders ignore"
+- Twitter/X: TEXT POST or short thread topic (5-12 words). Sharp, opinionated, scroll-stopping. NOT a video title. Example: "Why everyone in ${nicheStr} is wrong about X"
+
+For LinkedIn and Twitter/X ideas: the "hook" must be the literal opening LINE of the post (text people will read), and "duration" should be "Post" or "Thread" (not seconds). For video platforms keep duration in seconds/minutes.
 
 HOOK QUALITY: scroll-stopping, curiosity gap, shocking stat, bold claim, or personal story.
 INSIGHT: explain WHY this format/angle works on this platform right now.
