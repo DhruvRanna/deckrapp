@@ -172,10 +172,13 @@ const SwipeScreen: React.FC = () => {
 
   const restoreCachedFeed = useCallback((niche: string) => {
     const cached = readCachedFeed(niche);
-    if (!cached) return false;
+    if (!cached || !cached.ideas?.length) return false;
 
     setIdeas(cached.ideas);
-    setCurrentIndex(Math.min(cached.currentIndex, Math.max(cached.ideas.length - 1, 0)));
+    // If user already swiped through everything cached, recycle to 0 so a card
+    // shows immediately instead of a blank skeleton while AI fetch is pending.
+    const safeIndex = cached.currentIndex >= cached.ideas.length ? 0 : cached.currentIndex;
+    setCurrentIndex(safeIndex);
     return true;
   }, [readCachedFeed]);
 
