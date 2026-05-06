@@ -307,16 +307,17 @@ const SwipeScreen: React.FC = () => {
       return;
     }
 
-    // No cache — seed instantly with deduped fallback so user sees cards immediately,
+    // No cache — seed instantly with fallback so user sees cards immediately,
     // then fetch fresh AI ideas in background and merge them in.
     const recent = readRecentTitles(activeNiche);
-    const seed = dedupeIdeas([], getFallbackIdeas() as SwipeIdea[], recent);
-    if (seed.length > 0) {
-      setIdeas(seed);
-      setCurrentIndex(0);
-      persistCachedFeed(activeNiche, seed, 0);
-      writeRecentTitles(activeNiche, seed.map((idea) => idea.title));
-    }
+    let seed = dedupeIdeas([], getFallbackIdeas() as SwipeIdea[], recent);
+    // If dedupe filtered everything out (user has seen all templates), use raw fallback
+    // so the screen never sits blank on stable skeletons.
+    if (seed.length === 0) seed = getFallbackIdeas() as SwipeIdea[];
+    setIdeas(seed);
+    setCurrentIndex(0);
+    persistCachedFeed(activeNiche, seed, 0);
+    writeRecentTitles(activeNiche, seed.map((idea) => idea.title));
     loadIdeas({ niche: activeNiche, background: true });
   }, [activeNiche, authUser, getFallbackIdeas, loadIdeas, persistCachedFeed, readCachedFeed, readRecentTitles, restoreCachedFeed, user, writeRecentTitles]);
 
