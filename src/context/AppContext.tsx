@@ -368,7 +368,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const loadProfile = useCallback(async (uid: string) => {
     try {
-      let { data: profile, error: pErr } = await supabase.from("profiles").select("*").eq("user_id", uid).maybeSingle();
+      const { data: profile, error: pErr } = await supabase.from("profiles").select("*").eq("user_id", uid).maybeSingle();
       if (pErr) { console.warn("[loadProfile] fetch failed:", pErr.message); return null; }
       if (!profile) {
         const { data: { user: authData } } = await supabase.auth.getUser();
